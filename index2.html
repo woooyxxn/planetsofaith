@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planets of Faith</title>
+  <link href="https://fonts.cdnfonts.com/css/farm-wave-free" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  background: #2a231f;
+  height: 10000vh; /* 스크롤 거리 */
+
+  -ms-overflow-style: none;  /* IE, Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* 드래그 방지용 공통 클래스 */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 메인 헤딩 (Farm Wave 폰트) */
+.main-heading {
+  font-family: 'Farm Wave Free', sans-serif;
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #F4E4DC;
+  font-size: 2.7rem;
+  text-shadow: 0 0 12px rgba(0,0,0,0.6);
+  z-index: 20;
+  white-space: nowrap;
+}
+
+/* 상단 서브텍스트 */
+.title {
+  font-family: "Gowun Batang", serif;
+  position: fixed;
+  top: 80px; /* 메인 헤딩 아래 */
+  left: 50%;
+  transform: translateX(-50%);
+  color: #F4E4DC;
+  font-size: 1rem;
+  text-shadow: 0 0 8px rgba(0,0,0,0.6);
+  z-index: 20;
+}
+
+/* 행성 전체 박스 */
+.planet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 160vw);
+  width: 180vw;
+  height: 180vw;
+  z-index: 5;
+}
+
+/* 실제로 회전하는 행성 이미지(가상 요소) */
+.planet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("planet0.png") center top / cover no-repeat;
+  transform-origin: 50% 50%;
+  transform: rotate(var(--planet-angle, 0deg));
+    pointer-events: none; 
+}
+
+/* 배경 우주 레이어 */
+.bg-layer {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 220vmax;
+  height: 220vmax;
+  background: url("backgroundspace.jpg") center/cover no-repeat;
+  z-index: -2;
+  pointer-events: none;
+  transform-origin: 50% 60%;
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+/* ⭐ 행성 중심을 기준으로 도는 별 레이어 */
+.orbit-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transform: rotate(var(--orbit-angle, 0deg));
+  z-index: 15;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 1s ease;
+    pointer-events: none; 
+}
+
+/* 별 앵커 */
+.orbit-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: 50% 50%;
+    pointer-events: auto;
+}
+
+/* 고향별 위치 */
+.orbit-dot:nth-child(1) {
+  transform: translate(-50%, -50%) rotate(0deg) translateY(-114vw);
+}
+
+/* 실제 별 코어 */
+.orbit-dot::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 12px rgba(255,255,255,0.9);
+  transform: translate(-50%, -50%);
+  animation: twinkle 3s ease-in-out infinite alternate;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* 호버 hitbox */
+.orbit-dot::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* 호버 시 */
+.orbit-dot:hover::after {
+  transform: translate(-50%, -50%) scale(1.35);
+  animation: none;
+  box-shadow: 0 0 20px rgba(255,255,255,1);
+}
+
+/* 반짝임 */
+@keyframes twinkle {
+  0%   { opacity: 0.3; box-shadow: 0 0 4px rgba(255,255,255,0.4); }
+  50%  { opacity: 0.9; box-shadow: 0 0 12px rgba(255,255,255,1); }
+  100% { opacity: 0.5; box-shadow: 0 0 6px rgba(255,255,255,0.7); }
+}
+
+/* 툴팁 (고향별용) */
+.tooltip {
+  position: fixed;
+  padding: 8px 12px;
+  background: #F4E4DC;
+  color: #2a231f;
+  border-radius: 8px;
+  font-family: "Gowun Batang", serif;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-15%, -50%);
+  transition: opacity 0.15s ease;
+  z-index: 100000;
+}
+
+.tooltip-title {
+  font-weight: 700;
+}
+
+.tooltip-desc {
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* 걷는 캐릭터 */
+.walker {
+  position: fixed;
+  left: 50%;
+  bottom: 8vh;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 800px;
+  background-image: url("walkani.png");
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  transform-origin: 50% 100%;
+  opacity: 1;
+  transition: opacity 1s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 🔹 외계인 레이어 */
+.alien-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transform: rotate(var(--planet-angle, 0deg));
+  z-index: 8;
+  pointer-events: auto;
+}
+
+/* 행성 둘레에 배치될 외계인 앵커 */
+.alien-slot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20vw;
+  height: 20vw;
+  transform-origin: 50% 50%;
+}
+
+/* 외계인 스프라이트 공통 */
+.alien-sprite {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 16vw;
+  height: 16vw;
+  transform: translateX(-50%) scale(0.9);
+  transform-origin: 50% 100%;
+
+  background-repeat: no-repeat;
+  background-size: 32vw 16vw; /* 2프레임 시트 */
+  background-position: 0 0;
+
+  cursor: pointer;
+}
+
+/* 말풍선 (각 외계인 전용) */
+.alien-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;  /* 기본: 외계인 머리 위 */
+  transform: translate(-50%, +400%);
+  transform-origin: 50% 100%;
+
+  background: #F4E4DC;
+  color: #2a231f;
+  font-family: "Gowun Batang", serif;
+  font-size: 0.75rem;
+
+  padding: 6px 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+
+  max-width: 220px;
+  white-space: nowrap;
+  opacity: 0;
+
+  z-index: 9;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* 말풍선 꼬리 (위쪽 버전) */
+.alien-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #F4E4DC;
+}
+
+/* 위쪽으로 뜨는 기본 visible 상태 */
+.alien-bubble.visible {
+  opacity: 1;
+  transform: translate(-50%, +350%);
+}
+
+/* 🔹 화면 위쪽에 너무 가까운 애들은 말풍선 아래로 뒤집기 */
+.alien-bubble.below {
+  bottom: auto;
+  top: 100%;  /* 외계인 아래쪽에 뜨게 */
+  transform: translate(-50%, 40%);
+}
+
+.alien-bubble.below::after {
+  bottom: auto;
+  top: -6px;
+  border-top: none;
+  border-bottom: 6px solid #F4E4DC;
+}
+
+/* below + visible 조합일 때 transform 별도 적용 */
+.alien-bubble.visible.below {
+  transform: translate(-50%, 60%);
+}
+
+/* 각 외계인 스프라이트 이미지 연결 */
+.alien1 { background-image: url("alien1.png"); }
+.alien2 { background-image: url("alien2.png"); }
+.alien3 { background-image: url("alien3.png"); }
+.alien4 { background-image: url("alien4.png"); }
+.alien5 { background-image: url("alien5.png"); }
+.alien6 { background-image: url("alien6.png"); }
+.alien7 { background-image: url("alien7.png"); }
+
+/* 전체 스크롤바 숨기기 */
+html {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+</style>
+</head>
+
+<body>
+  <!-- 배경 우주 -->
+  <div class="bg-layer"></div>
+
+  <!-- 행성 + 고향별 + 외계인들 -->
+  <div class="planet">
+    <div class="orbit-layer">
+      <div class="orbit-dot"
+           data-title="Go Home"
+           data-desc="탐험을 마친 뒤 고향별로 돌아갑니다."></div>
+    </div>
+
+    <!-- 외계인들: JS가 35마리 채울 예정 -->
+    <div class="alien-layer"></div>
+  </div>
+
+  <!-- 상단 텍스트들 -->
+  <div class="main-heading no-select">The Planet of Relation</div>
+  <div class="title no-select">행성을 탐험하며, 마음에 드는 말들을 클릭해 수집해보세요.</div>
+
+  <!-- 걷는 캐릭터 -->
+  <div class="walker"></div>
+
+  <!-- 툴팁 (고향별용) -->
+  <div class="tooltip" id="planetTooltip">
+    <div class="tooltip-title"></div>
+    <div class="tooltip-desc"></div>
+  </div>
+
+<script>
+  const planet = document.querySelector('.planet');
+  const bg = document.querySelector('.bg-layer');
+  const walker = document.querySelector('.walker');
+  const orbitLayer = document.querySelector('.orbit-layer');
+  const dots = document.querySelectorAll('.orbit-dot');
+  const tooltip = document.getElementById('planetTooltip');
+  const tooltipTitle = tooltip.querySelector('.tooltip-title');
+  const tooltipDesc = tooltip.querySelector('.tooltip-desc');
+
+  /* ============================
+     🔹 외계인들 동적으로 생성
+     ============================ */
+/* ============================
+   🔹 외계인들 리스트 (총 35개)
+   나중에 각 문장을 여기서 하나씩 채우면 됨!
+   ============================ */
+
+const ALIEN_LINES = [
+  "(추후 더 기입 예정입니다.)", // 1
+  "(추후 더 기입 예정입니다.)", // 2
+  "(추후 더 기입 예정입니다.)", // 3
+  "(추후 더 기입 예정입니다.)", // 4
+  "(추후 더 기입 예정입니다.)", // 5
+  "(추후 더 기입 예정입니다.)", // 6
+  "(추후 더 기입 예정입니다.)", // 7
+  "(추후 더 기입 예정입니다.)", // 8
+  "(추후 더 기입 예정입니다.)", // 9
+  "(추후 더 기입 예정입니다.)", // 10
+  "(추후 더 기입 예정입니다.)", // 11
+  "(추후 더 기입 예정입니다.)", // 12
+  "(추후 더 기입 예정입니다.)", // 13
+  "(추후 더 기입 예정입니다.)", // 14
+  "(추후 더 기입 예정입니다.)", // 15
+  "(추후 더 기입 예정입니다.)", // 16
+  "(추후 더 기입 예정입니다.)", // 17
+  "(추후 더 기입 예정입니다.)", // 18
+  "(추후 더 기입 예정입니다.)", // 19
+  "(추후 더 기입 예정입니다.)", // 20
+  "(추후 더 기입 예정입니다.)", // 21
+  "(추후 더 기입 예정입니다.)", // 22
+  "(추후 더 기입 예정입니다.)", // 23
+  "투명한 사람이 좋아요.", // 24
+  "저와 비슷한 점이 많은 사람이 좋아요.", // 25
+  "생각을 알기 어려운 사람이 좋아요.", // 26
+  "이해가 되지 않는 사람은 멀리해야해요.", // 27
+  "타인에게 기대를 줄여야해요.", // 28
+  "상대방을 맞춰 저 자신을 바꾸면 안돼요.", // 29
+  "상대방을 바꾸려 해서는 안돼요.", // 30
+  "따뜻한 말보다 따뜻한 행동이 좋아요.", // 31
+  "관계는 감정을 주고받을 수록 단단해져요.", // 32
+  "관계는 거리 조절로 유지돼요.", // 33
+  "사람과 가까워질수록 가면은 사라져요.", // 34
+  "사람과 가까워질수록 더 조심히 다뤄야해요.", // 35
+];
+
+const alienLayer = document.querySelector('.alien-layer');
+alienLayer.innerHTML = "";
+
+/* ============================
+   🔹 총 35개 슬롯 생성
+   ============================ */
+
+const ALIEN_IMAGES = [
+  'alien1.png',
+  'alien2.png',
+  'alien3.png',
+  'alien4.png',
+  'alien5.png',
+  'alien6.png',
+  'alien7.png'
+];
+
+const ALIEN_COUNT = 35;
+const RADIUS_VW   = -96;
+
+for (let i = 0; i < ALIEN_COUNT; i++) {
+
+  const slot = document.createElement('div');
+  slot.className = 'alien-slot';
+
+  const sprite = document.createElement('div');
+  sprite.className = 'alien-sprite';
+
+  // 이미지 순환
+  const imgIndex = i % ALIEN_IMAGES.length;
+  sprite.style.backgroundImage = `url("${ALIEN_IMAGES[imgIndex]}")`;
+
+  // 말풍선
+  const bubble = document.createElement('div');
+  bubble.className = 'alien-bubble';
+
+  bubble.textContent = ALIEN_LINES[i];
+
+  slot.appendChild(sprite);
+  slot.appendChild(bubble);
+
+  // 자리 배치
+  const angle = (360 / ALIEN_COUNT) * i;
+  slot.style.transform =
+    `translate(-50%, -50%) rotate(${angle}deg) translateY(${RADIUS_VW}vw)`;
+
+  alienLayer.appendChild(slot);
+}
+
+
+  /* 🔹 말풍선 hover 제어 + 화면 위쪽에서는 아래로 뒤집기 */
+  const alienSlots = document.querySelectorAll('.alien-slot');
+  alienSlots.forEach(slot => {
+    const bubble = slot.querySelector('.alien-bubble');
+
+    slot.addEventListener('mouseenter', () => {
+      const rect = slot.getBoundingClientRect();
+      const margin = 80; // 화면 상단에서 80px 이내면 아래로 뒤집기
+
+      if (rect.top < margin) {
+        bubble.classList.add('below');
+      } else {
+        bubble.classList.remove('below');
+      }
+
+      bubble.classList.add('visible');
+    });
+
+    slot.addEventListener('mouseleave', () => {
+      bubble.classList.remove('visible');
+    });
+  });
+
+  /* ============================
+     🔹 외계인 2프레임 애니메이션
+     ============================ */
+  const aliens = document.querySelectorAll('.alien-sprite');
+
+  let alienFrame = 0;
+  const FRAME_VW = 16;        // 한 프레임 가로폭 (vw)
+  const ALIEN_FPS = 4;
+  const ALIEN_INTERVAL = 1000 / ALIEN_FPS;
+
+  setInterval(() => {
+    alienFrame = 1 - alienFrame;
+    const offsetX = -FRAME_VW * alienFrame; // 0vw 또는 -16vw
+
+    aliens.forEach((alien) => {
+      alien.style.backgroundPosition = `${offsetX}vw 0`;
+    });
+  }, ALIEN_INTERVAL);
+
+  /* ============================
+     🔹 회전 상태
+     ============================ */
+  let lastScrollY = window.scrollY;
+  let planetAngle = 0;
+  let orbitAngle = 0;
+  let bgAngle = 0;
+
+  /* ============================
+     🔹 걷는 캐릭터 스프라이트
+     ============================ */
+  const FRAME_WIDTH = 800;
+  const TOTAL_FRAMES = 12;
+  const IDLE_FRAME = 0;
+  let currentFrame = IDLE_FRAME;
+  let stopTimer = null;
+
+  let frameProgress = 0;
+  const FRAME_SPEED_FACTOR = 0.05;
+
+  const CHAR_RATIO = 0.25;
+  const ON_SURFACE_OFFSET = 0.06;
+
+  function positionWalker() {
+    const rect = planet.getBoundingClientRect();
+    const planetSize = rect.width;
+
+    const charSize = planetSize * CHAR_RATIO;
+    const scale = charSize / FRAME_WIDTH;
+    walker.style.transform = `translateX(-50%) scale(${scale})`;
+
+    const planetTop = rect.top;
+    const baseBottom = window.innerHeight - planetTop;
+    const bottom = baseBottom - planetSize * ON_SURFACE_OFFSET;
+
+    walker.style.bottom = `${bottom}px`;
+  }
+
+  function setWalkerFrame(frameIndex) {
+    const x = -FRAME_WIDTH * frameIndex;
+    walker.style.backgroundPosition = `${x}px 0`;
+  }
+
+  setWalkerFrame(IDLE_FRAME);
+  positionWalker();
+  window.addEventListener('resize', positionWalker);
+
+  /* ============================
+     🔹 고향별 툴팁 위치 추적
+     ============================ */
+  let hoveredDot = null;
+  let tooltipAnimId = null;
+
+  function updateTooltipPosition() {
+    if (!hoveredDot) return;
+
+    const rect = hoveredDot.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const offsetX = 65;
+    const offsetY = 0;
+
+    tooltip.style.left = (centerX + offsetX) + 'px';
+    tooltip.style.top  = (centerY + offsetY) + 'px';
+
+    tooltipAnimId = requestAnimationFrame(updateTooltipPosition);
+  }
+
+  dots.forEach((dot) => {
+  const title = dot.getAttribute('data-title');
+  const desc = dot.getAttribute('data-desc');
+
+  dot.addEventListener('mouseenter', () => {
+    if (!title) return;
+
+    hoveredDot = dot;
+    tooltipTitle.textContent = title;
+    tooltipDesc.textContent = desc || "";
+
+    tooltip.style.opacity = '1';
+    tooltip.style.visibility = 'visible';
+
+    if (tooltipAnimId) cancelAnimationFrame(tooltipAnimId);
+    updateTooltipPosition();
+  });
+
+  dot.addEventListener('mouseleave', () => {
+    hoveredDot = null;
+    if (tooltipAnimId) {
+      cancelAnimationFrame(tooltipAnimId);
+      tooltipAnimId = null;
+    }
+    tooltip.style.opacity = '0';
+    tooltip.style.visibility = 'hidden';
+  });
+
+  // 🔹 여기 클릭 시 이동 처리
+dot.addEventListener('click', () => {
+  if (title === 'Go Home') {
+    window.location.href = 'index.html?skipIntro=true';
+  }
+});
+
+});
+
+
+  /* ============================
+     🔹 스크롤 시 행성/별/배경 회전 + 걷기
+     ============================ */
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    const delta = scrollY - lastScrollY;
+    lastScrollY = scrollY;
+
+    const d = Math.abs(delta);
+
+    planetAngle += d * 0.03;
+    orbitAngle  += d * 0.01;
+    bgAngle     += d * 0.003;
+
+    planet.style.setProperty('--planet-angle', `${planetAngle}deg`);
+
+    if (orbitLayer) {
+      orbitLayer.style.setProperty('--orbit-angle', `${orbitAngle}deg`);
+    }
+
+    bg.style.transform = `translate(-50%, -50%) rotate(${bgAngle}deg)`;
+
+    let speed = d;
+    if (speed < 0.8) speed = 0.8;
+    if (speed > 8)   speed = 8;
+
+    frameProgress += speed * FRAME_SPEED_FACTOR;
+
+    while (frameProgress >= 1) {
+      frameProgress -= 1;
+
+      if (currentFrame === IDLE_FRAME) {
+        currentFrame = 1;
+      } else {
+        currentFrame++;
+        if (currentFrame >= TOTAL_FRAMES) {
+          currentFrame = 1;
+        }
+      }
+      setWalkerFrame(currentFrame);
+    }
+
+    if (stopTimer) clearTimeout(stopTimer);
+    stopTimer = setTimeout(() => {
+      currentFrame = IDLE_FRAME;
+      frameProgress = 0;
+      setWalkerFrame(currentFrame);
+    }, 250);
+  });
+</script>
+
+</body>
+</html>
