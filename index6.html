@@ -18,23 +18,6 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
-/* ==========================
-   🌕 페이지 전환용 페이드
-========================== */
-#page-transition {
-  position: fixed;
-  inset: 0;
-  background: white;
-  z-index: 999998;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-}
-
-/* 페이지 떠날 때 활성화 */
-#page-transition.active {
-  opacity: 1;
-}
 
 /* 드래그 방지용 공통 클래스 */
 .no-select {
@@ -628,7 +611,7 @@ html::-webkit-scrollbar {
   <!-- 상단 텍스트들 -->
   <div class="main-heading no-select">
     <span class="relation-prev-btn"></span>
-    The Planet of Relation
+    The Planet of Art
     <span class="relation-next-btn"></span>
   </div>
   <div class="title no-select">행성을 탐험하며, 마음에 드는 말들을 클릭해 수집해보세요.</div>
@@ -761,7 +744,7 @@ function applySavedStateIfAny() {
   // 1) 선택 인덱스 배열 읽기
   let savedSel = [];
   try {
-    const raw = localStorage.getItem('relationPlanetSelections');
+    const raw = localStorage.getItem('artPlanetSelections');
     if (raw) savedSel = JSON.parse(raw);
   } catch (e) {
     savedSel = [];
@@ -776,7 +759,7 @@ function applySavedStateIfAny() {
   }
 
   // 선택값은 있되, "완전히 저장된 상태"인지 여부는 별도 플래그로 판단
-  const done = localStorage.getItem('relationPlanetDone') === 'true';
+  const done = localStorage.getItem('artPlanetDone') === 'true';
 
   selectedIndices = savedSel
     .map(n => Number(n))
@@ -1074,7 +1057,7 @@ prevBtn.addEventListener("mouseleave", () => {
 
 /* ▶ 다음 버튼 */
 nextBtn.addEventListener("mouseenter", () => {
-  setSubtitleText("다음 행성으로 진입합니다.");
+  setSubtitleText("다시 고향 행성으로 돌아갑니다.");
 });
 nextBtn.addEventListener("mouseleave", () => {
   setSubtitleText(DEFAULT_TEXT);
@@ -1082,10 +1065,10 @@ nextBtn.addEventListener("mouseleave", () => {
 
 /* 클릭 이동 */
 prevBtn.addEventListener("click", () => {
-  window.location.href = 'index.html?skipIntro=true';
+  window.location.href = 'index5.html';
 });
 nextBtn.addEventListener("click", () => {
-  window.location.href = 'index3.html';
+  window.location.href = 'index.html?skipIntro=true';
 });
 
 /* ============================
@@ -1102,8 +1085,8 @@ saveBtn.addEventListener("click", () => {
   editBtn.style.display = "inline-block";
 
   // 🔹 이때만 로컬스토리지에 기록
-  localStorage.setItem("relationPlanetDone", "true");
-  localStorage.setItem("relationPlanetSelections", JSON.stringify(selectedIndices));
+  localStorage.setItem("artPlanetDone", "true");
+  localStorage.setItem("artPlanetSelections", JSON.stringify(selectedIndices));
 });
 
 

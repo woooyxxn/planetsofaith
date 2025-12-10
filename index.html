@@ -1,340 +1,528 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-   <script>
+  <!-- URL 파라미터 skipIntro=true면 인트로 스킵 -->
+  <script>
     (function () {
       try {
         const params = new URLSearchParams(window.location.search);
         if (params.get('skipIntro') === 'true') {
-          // HTML 루트에 클래스 붙여서 CSS로 바로 숨기기
           document.documentElement.classList.add('skip-intro');
         }
       } catch (e) {}
     })();
   </script>
- 
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planets of Faith</title>
   <link href="https://fonts.cdnfonts.com/css/farm-wave-free" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang&family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
 
-<style>
-body {
-  margin: 0;
-  background: #2a231f;
-  height: 10000vh; /* 스크롤 거리 */
+  <style>
+    /* ===== 기본 ===== */
+    body {
+      margin: 0;
+      background: #2a231f;
+      height: 10000vh;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    body::-webkit-scrollbar { display: none; }
 
-  /* 🔹 사이드 스크롤바만 숨기기 */
-  -ms-overflow-style: none;  /* IE, Edge */
-  scrollbar-width: none;     /* Firefox */
-}
-body::-webkit-scrollbar {
-  display: none;
-}
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
 
-/* 드래그 방지용 공통 클래스 */
-.no-select {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
+    /* ===== 인트로 오버레이 ===== */
+    .intro-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 1s ease;
+      pointer-events: none;
+    }
 
-/* 인트로 오버레이: 배경 우주 + 행성 위에 반투명 레이어 */
-.intro-overlay {
+    .intro-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transform: translateY(-8vh);
+    }
+
+    .intro-title {
+      font-family: 'Farm Wave Free', sans-serif;
+      font-size: 2.5rem;
+      color: #F4E4DC;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 12px rgba(0,0,0,0.6);
+      opacity: 1;
+      transition: opacity 1s ease;
+      pointer-events: none;
+      text-align: center;
+    }
+    .intro-title.hide { opacity: 0; }
+
+    .intro-text {
+      font-family: "Gowun Batang", serif;
+      color: #F4E4DC;
+      max-width: 80vw;
+      font-size: 1rem;
+      text-align: center;
+      line-height: 1.7;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    /* ===== 상단 안내 텍스트 ===== */
+    .title {
+      font-family: "Gowun Batang", serif;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #F4E4DC;
+      font-size: 1rem;
+      text-shadow: 0 0 8px rgba(0,0,0,0.6);
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    /* 현재 캐릭터 아래 행성 이름 */
+    .planet-label {
+      position: fixed;
+      top: 52px;
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      font-family: 'Farm Wave Free', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.07em;
+      color: #F4E4DC;
+      text-shadow: 0 0 14px rgba(0,0,0,0.55);
+      z-index: 20;
+      opacity: 0;
+      transition:
+        opacity 0.55s ease,
+        transform 0.6s ease;
+    }
+    .planet-label.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== 배경 우주 ===== */
+    .bg-layer {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 220vmax;
+      height: 220vmax;
+      background: url("backgroundspace.jpg") center/cover no-repeat;
+      z-index: -2;
+      pointer-events: none;
+      transform-origin: 50% 60%;
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    /* ===== 행성 ===== */
+    .planet {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translate(-50%, 160vw);
+      width: 180vw;
+      height: 180vw;
+      z-index: 5;
+    }
+
+    .planet::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("planet.png") center top / cover no-repeat;
+      transform-origin: 50% 50%;
+      transform: rotate(var(--planet-angle, 0deg));
+    }
+
+    /* ===== 궤도 레이어 + 별 ===== */
+    .orbit-layer {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      transform: rotate(var(--orbit-angle, 0deg));
+      z-index: 15;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    /* 궤도 점선 */
+    
+
+    /* 궤도상의 별 */
+    .orbit-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: 50% 50%;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 15;
+    }
+
+    .orbit-dot:nth-child(2) {
+      transform: translate(-50%, -50%) rotate(-125deg) translateY(-114vw);
+    }
+    .orbit-dot:nth-child(3) {
+      transform: translate(-50%, -50%) rotate(-100deg) translateY(-114vw);
+    }
+    .orbit-dot:nth-child(4) {
+      transform: translate(-50%, -50%) rotate(-75deg) translateY(-114vw);
+    }
+    .orbit-dot:nth-child(5) {
+      transform: translate(-50%, -50%) rotate(-50deg) translateY(-114vw);
+    }
+    .orbit-dot:nth-child(6) {
+      transform: translate(-50%, -50%) rotate(-25deg) translateY(-114vw);
+    }
+    .orbit-dot:nth-child(7) {
+      transform: translate(-50%, -50%) rotate(0deg) translateY(-114vw);
+    }
+
+    .orbit-dot::before,
+    .orbit-dot::after {
+      pointer-events: none;
+    }
+
+    /* ⭐ 기본 별(코어) */
+    .orbit-dot::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: white;
+      transform: translate(-50%, -50%);
+      box-shadow:
+        0 0 4px rgba(255,255,255,0.8),
+        0 0 12px rgba(255,255,255,0.9),
+        0 0 22px rgba(255,255,255,0.8);
+      animation: twinkle 2.4s ease-in-out infinite alternate;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* ⭐ 후광 링 */
+    .orbit-dot::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: radial-gradient(circle,
+        rgba(255,255,255,0.18) 0,
+        rgba(255,255,255,0.06) 45%,
+        transparent 70%
+      );
+      box-shadow: 0 0 14px rgba(255,255,255,0.35);
+      opacity: 0.7;
+      animation: orbitPulse 2.6s ease-in-out infinite;
+    }
+
+    .orbit-dot:hover::after {
+      transform: translate(-50%, -50%) scale(1.5);
+      animation: none;
+      box-shadow:
+        0 0 6px rgba(255,255,255,1),
+        0 0 20px rgba(255,255,255,1),
+        0 0 32px rgba(255,255,255,1);
+    }
+
+    .orbit-dot:hover::before {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    @keyframes twinkle {
+      0%   { opacity: 0.4; box-shadow: 0 0 4px rgba(255,255,255,0.5); }
+      50%  { opacity: 1;   box-shadow: 0 0 14px rgba(255,255,255,1); }
+      100% { opacity: 0.6; box-shadow: 0 0 8px rgba(255,255,255,0.8); }
+    }
+
+    @keyframes orbitPulse {
+      0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0.5; }
+      50%  { transform: translate(-50%, -50%) scale(1.12); opacity: 0.9; }
+      100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.5; }
+    }
+
+    /* LIFE 별 강조(잠금/해제는 JS에서 처리) */
+    .orbit-dot--life::after {
+      width: 22px;
+      height: 22px;
+      background: #fffbe8;
+      box-shadow:
+        0 0 6px rgba(255, 252, 230, 0.9),
+        0 0 16px rgba(255, 255, 255, 0.95),
+        0 0 32px rgba(255, 245, 210, 0.9);
+      animation: lifeTwinkle 1.8s ease-in-out infinite alternate;
+    }
+
+    .orbit-dot--life::before {
+      width: 120%;
+      height: 120%;
+      border: 1.5px solid rgba(255, 244, 220, 0.8);
+      box-shadow:
+        0 0 10px rgba(255, 244, 220, 0.7),
+        0 0 22px rgba(255, 240, 210, 0.7);
+      opacity: 0.9;
+      animation: lifePulse 2.2s ease-in-out infinite;
+    }
+
+    .orbit-dot--life:hover::after {
+      transform: translate(-50%, -50%) scale(1.7);
+      box-shadow:
+        0 0 8px rgba(255, 255, 255, 1),
+        0 0 26px rgba(255, 255, 255, 1),
+        0 0 40px rgba(255, 245, 220, 1);
+    }
+
+    .orbit-dot--life:hover::before {
+      transform: translate(-50%, -50%) scale(1.12);
+      opacity: 1;
+    }
+
+    @keyframes lifeTwinkle {
+      0% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(1.0);
+      }
+      50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
+      }
+      100% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.02);
+      }
+    }
+
+    @keyframes lifePulse {
+      0% {
+        transform: translate(-50%, -50%) scale(1.0);
+        opacity: 0.7;
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1.18);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1.0);
+        opacity: 0.7;
+      }
+    }
+
+    /* ===== 툴팁 ===== */
+    .tooltip {
+      position: fixed;
+      padding: 8px 12px;
+      background: #F4E4DC;
+      color: #2a231f;
+      border-radius: 8px;
+      font-family: "Gowun Batang", serif;
+      font-size: 0.8rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-15%, -50%);
+      transition: opacity 0.15s ease;
+      z-index: 100000;
+    }
+
+    .tooltip-title {
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .lock-icon {
+      width: 1em;
+      height: 1em;
+      display: none;
+      object-fit: contain;
+    }
+
+    .locked-msg {
+      font-weight: 400;
+      font-size: 0.9em;
+      opacity: 0.8;
+      display: none;
+    }
+
+    .tooltip-desc {
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    /* ===== 걷는 캐릭터 ===== */
+    .walker {
+      position: fixed;
+      left: 50%;
+      bottom: 8vh;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background-image: url("walkani.png");
+      background-repeat: no-repeat;
+      background-position: 0 0;
+      transform-origin: 50% 100%;
+      opacity: 0;
+      transition: opacity 1s ease;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* 🔶 공통 행성 탐험완료 뱃지 + 꺾인 점선 */
+    .planet-badge {
+      position: fixed;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      font-family: "Gowun Batang", serif;
+    }
+
+    .planet-badge-circle {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #F4E4DC;
+      color: #3a2e28;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      box-shadow: 0 0 8px rgba(60, 45, 35, 0.45);
+    }
+
+    .planet-badge-text {
+      color: #F4E4DC;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+
+    .planet-connector {
+      position: fixed;
+      z-index: 49;
+      pointer-events: none;
+    }
+
+    .planet-connector-line {
+      position: absolute;
+      border-top: 1px dashed rgba(244, 228, 220, 0.9);
+    }
+
+    .planet-connector-diag {
+      width: 26px;
+      top: -2px;
+      left: 6px;
+      transform-origin: left center;
+      transform: rotate(-35deg);
+    }
+
+    .planet-connector-horiz {
+      width: 22px;
+      top: -18px;
+      left: 28px;
+    }
+/* ========================
+   🌙 갈색 페이드 로딩 화면
+======================== */
+#loading-screen {
   position: fixed;
   inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  opacity: 1;
-  transition: opacity 1s ease;
-  pointer-events: none;
-}
-
-/* 🔹 타이틀 + 멘트를 묶는 그룹 */
-.intro-group {
+  background: #1f1916;  /* 아주 어두운 갈색 */
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 8px;
-  transform: translateY(-8vh);
-}
-
-/* 인트로 텍스트 */
-.intro-text {
-  font-family: "Gowun Batang", serif;
-  color: #F4E4DC;
-  max-width: 80vw;
-  font-size: 1rem;
-  text-align: center;
-  line-height: 1.7;
-  letter-spacing: 0.04em;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-
-/* 상단 텍스트 */
-.title {
-  font-family: "Gowun Batang", serif;
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #F4E4DC;
-  font-size: 1rem;
-  text-shadow: 0 0 8px rgba(0,0,0,0.6);
-  z-index: 20;
-  opacity: 0;
-  transition: opacity 1s ease;
-}
-
-/* 행성 전체 박스 */
-.planet {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  transform: translate(-50%, 160vw);
-  width: 180vw;
-  height: 180vw;
-  z-index: 5;
-}
-
-/* 실제로 회전하는 행성 이미지(가상 요소) */
-.planet::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: url("planet.png") center top / cover no-repeat;
-  transform-origin: 50% 50%;
-  transform: rotate(var(--planet-angle, 0deg));
-}
-
-/* 🔹 배경 우주 레이어 – 화면 중앙에 큰 정사각형으로 고정 */
-.bg-layer {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 220vmax;   /* 화면 대각선보다 훨씬 크게 */
-  height: 220vmax;
-  background: url("backgroundspace.jpg") center/cover no-repeat;
-  z-index: -2;
-  pointer-events: none;
-  transform-origin: 50% 60%;  /* 연우가 말한 중심 위치 유지 */
-  transform: translate(-50%, -50%) rotate(0deg);
-}
-
-/* ⭐ 행성 중심을 기준으로 도는 별 레이어 (행성 안에 절대 배치) */
-.orbit-layer {
-  position: absolute;
-  inset: 0;
-  transform-origin: 50% 50%;
-  transform: rotate(var(--orbit-angle, 0deg));
-  z-index: 15;
-  opacity: 1;           /* ✅ 항상 보이게 */
-  pointer-events: auto; /* ✅ 항상 호버/클릭 가능하게 */
-  /* transition: opacity 1s ease;  필요 없으면 지워도 되고 놔둬도 영향 없음 */
-}
-
-
-/* ================================
-   ⭐ 별 앵커: 궤도 위치만 담당
-   ================================ */
-.orbit-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform-origin: 50% 50%;
-}
-
-/* 각 별의 궤도 위치 (각도만 다름) */
-.orbit-dot:nth-child(1) {
-  transform: translate(-50%, -50%) rotate(0deg) translateY(-114vw);
-}
-.orbit-dot:nth-child(2) {
-  transform: translate(-50%, -50%) rotate(60deg) translateY(-114vw);
-}
-.orbit-dot:nth-child(3) {
-  transform: translate(-50%, -50%) rotate(120deg) translateY(-114vw);
-}
-.orbit-dot:nth-child(4) {
-  transform: translate(-50%, -50%) rotate(180deg) translateY(-114vw);
-}
-.orbit-dot:nth-child(5) {
-  transform: translate(-50%, -50%) rotate(240deg) translateY(-114vw);
-}
-.orbit-dot:nth-child(6) {
-  transform: translate(-50%, -50%) rotate(300deg) translateY(-114vw);
-}
-
-/* ⭐ 실제로 보이는 별 코어 (크기·애니메이션 담당) */
-.orbit-dot::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: white;
-  box-shadow: 0 0 12px rgba(255,255,255,0.9);
-  transform: translate(-50%, -50%);
-  animation: twinkle 3s ease-in-out infinite alternate;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* ⭐ 호버 hitbox: 살짝 넓게 */
-.orbit-dot::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 30px;
-  height: 30px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: transparent;
-}
-
-/* ⭐ 호버 시: 코어만 커지고 반짝임 멈춤 */
-.orbit-dot:hover::after {
-  transform: translate(-50%, -50%) scale(1.35);
-  animation: none;
-  box-shadow: 0 0 20px rgba(255,255,255,1);
-}
-
-/* 별 반짝임 */
-@keyframes twinkle {
-  0%   { opacity: 0.3; box-shadow: 0 0 4px rgba(255,255,255,0.4); }
-  50%  { opacity: 0.9; box-shadow: 0 0 12px rgba(255,255,255,1); }
-  100% { opacity: 0.5; box-shadow: 0 0 6px rgba(255,255,255,0.7); }
-}
-
-/* 툴팁 박스 (JS로 위치 제어) */
-.tooltip {
-  position: fixed;
-  padding: 8px 12px;
-  background: #F4E4DC;
-  color: #2a231f;
-  border-radius: 8px;
-  font-family: "Gowun Batang", serif;
-  font-size: 0.8rem;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transform: translate(-15%, -50%);
-  transition: opacity 0.15s ease;
-  z-index: 100000;
-}
-
-/* 제목 + 자물쇠 + 잠금문구 한 줄 */
-.tooltip-title {
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-/* 자물쇠 아이콘 */
-.lock-icon {
-  width: 1em;   /* 폰트 크기만큼 */
-  height: 1em;
-  display: none; /* 기본은 안 보이게 */
-  object-fit: contain;
-}
-
-/* 자물쇠 옆 텍스트 */
-.locked-msg {
-  font-weight: 400;
-  font-size: 0.9em;
-  opacity: 0.8;
-  display: none; /* 기본은 감춤 */
-}
-
-.tooltip-desc {
-  line-height: 1.4;
-  white-space: nowrap;
-}
-
-/* 걷는 캐릭터(어린왕자+여우) */
-.walker {
-  position: fixed;
-  left: 50%;
-  bottom: 8vh;
-  transform: translateX(-50%);
-  width: 800px;
-  height: 800px;
-  background-image: url("walkani.png");
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  transform-origin: 50% 100%;
-  opacity: 0;
-  transition: opacity 1s ease;
-  z-index: 10;
-  pointer-events: none;
-}
-
-/* 🔹 인트로 타이틀 */
-.intro-title {
-  font-family: 'Farm Wave Free', sans-serif;
-  font-size: 2.5rem;
-  color: #F4E4DC;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 12px rgba(0,0,0,0.6);
+  z-index: 999999;
   opacity: 1;
-  transition: opacity 1s ease;
-  pointer-events: none;
-  text-align: center;
+  transition: opacity 1s ease; /* 페이드 아웃 */
+  pointer-events: all;
 }
 
-/* 인트로 끝날 때 사라지는 상태 */
-.intro-title.hide {
+/* 로딩 점프하는 원 */
+.loading-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #F4E4DC; /* 행성/텍스트와 맞는 베이지 */
+  margin-bottom: 14px;
+  animation: loadingBounce 0.8s ease-in-out infinite alternate;
+  box-shadow: 0 0 10px rgba(244,228,220,0.6);
+}
+
+/* Loading… 텍스트 */
+.loading-text {
+  color: #F4E4DC;
+  font-family: "Gowun Batang", serif;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
   opacity: 0;
+  animation: fadeInText 1.5s ease forwards;
 }
 
-/* 🔹 전체 문서 스크롤바 숨기기 (스크롤 기능은 유지) */
-html {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-html::-webkit-scrollbar {
-  display: none;
-}
-/* 🔹 skipIntro=true 인 상태에서는 인트로 요소들을 아예 처음부터 숨기기 */
-html.skip-intro body {
-  overflow: auto;
+@keyframes loadingBounce {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-10px) scale(1.15); }
 }
 
-html.skip-intro .intro-overlay {
-  display: none !important;
+@keyframes fadeInText {
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-html.skip-intro .intro-title,
-html.skip-intro .intro-text {
-  display: none !important;
-}
+    /* ===== 전체 스크롤바 숨기기 ===== */
+    html {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    html::-webkit-scrollbar { display: none; }
 
-html.skip-intro .title {
-  opacity: 1 !important;
-}
-
-html.skip-intro .walker {
-  opacity: 1 !important;
-}
-
-html.skip-intro .orbit-layer {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-</style>
-
+    /* skipIntro 일 때 인트로 제거 */
+    html.skip-intro body { overflow: auto; }
+    html.skip-intro .intro-overlay { display: none !important; }
+    html.skip-intro .intro-title,
+    html.skip-intro .intro-text { display: none !important; }
+    html.skip-intro .title { opacity: 1 !important; }
+    html.skip-intro .walker { opacity: 1 !important; }
+    html.skip-intro .orbit-layer { opacity: 1 !important; }
+  </style>
 </head>
 <body>
+  <div id="page-transition"></div>
   <!-- 인트로 텍스트 오버레이 -->
   <div class="intro-overlay">
     <div class="intro-group no-select">
@@ -346,42 +534,51 @@ html.skip-intro .orbit-layer {
   <!-- 배경 우주 -->
   <div class="bg-layer"></div>
 
-  <!-- 큰 행성 + 그 중심을 도는 별들 -->
+  <!-- 행성 + 궤도별 -->
   <div class="planet">
     <div class="orbit-layer">
-      <div class="orbit-dot"
-           data-title="The Planet of Life"
+      <!-- 궤도 점선 -->
+      <div class="orbit-arc">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M 20 40 Q 50 10 80 40"
+                stroke="white"
+                stroke-width="1.5"
+                stroke-dasharray="4 6"
+                fill="none"
+                stroke-linecap="round" />
+        </svg>
+      </div>
+
+      <!-- 여섯 개의 별 -->
+      <div class="orbit-dot orbit-dot--life"
+           data-title="The Planet of Faith"
            data-desc="당신이 믿고 살아가는 가치가 모여있는 행성입니다."></div>
-    
       <div class="orbit-dot"
            data-title="The Planet of Art"
            data-desc="이 곳의 곤재들은 특정한 예술관을 가지고 살아갑니다."></div>
-
       <div class="orbit-dot"
            data-title="The Planet of Ego"
            data-desc="이 곳의 곤재들은 특정한 자아관을 가지고 살아갑니다."></div>
-
       <div class="orbit-dot"
            data-title="The Planet of Emotion"
            data-desc="이 곳의 곤재들은 특정한 감정관을 가지고 살아갑니다."></div>
-
       <div class="orbit-dot"
            data-title="The Planet of Work"
            data-desc="이 곳의 곤재들은 특정한 직업관을 가지고 살아갑니다."></div>
-
       <div class="orbit-dot"
            data-title="The Planet of Relation"
            data-desc="이 곳의 곤재들은 특정한 관계관을 가지고 살아갑니다."></div>
     </div>
   </div>
 
-  <!-- 상단 텍스트 -->
+  <!-- 상단 텍스트 + 현재 행성 라벨 -->
   <div class="title no-select">탐사할 행성을 선택하세요</div>
+  <div class="planet-label no-select"></div>
 
   <!-- 걷는 캐릭터 -->
   <div class="walker"></div>
 
-  <!-- 툴팁 박스 -->
+  <!-- 툴팁 -->
   <div class="tooltip" id="planetTooltip">
     <div class="tooltip-title">
       <span class="tooltip-title-text"></span>
@@ -391,323 +588,583 @@ html.skip-intro .orbit-layer {
     <div class="tooltip-desc"></div>
   </div>
 
-<script>
-  const planet = document.querySelector('.planet');
-  const bg = document.querySelector('.bg-layer');
-  const walker = document.querySelector('.walker');
-  const orbitLayer = document.querySelector('.orbit-layer');
-  const dots = document.querySelectorAll('.orbit-dot');
-  const tooltip = document.getElementById('planetTooltip');
-  const tooltipTitleText = tooltip.querySelector('.tooltip-title-text');
-  const tooltipDesc = tooltip.querySelector('.tooltip-desc');
-  const lockIcon = tooltip.querySelector('.lock-icon');
-  const lockedMsg = tooltip.querySelector('.locked-msg');
+  <script>
+    const planet       = document.querySelector('.planet');
+    const bg           = document.querySelector('.bg-layer');
+    const walker       = document.querySelector('.walker');
+    const orbitLayer   = document.querySelector('.orbit-layer');
+    const dots         = document.querySelectorAll('.orbit-dot');
+    const planetLabelEl= document.querySelector('.planet-label');
 
-  // --- 인트로 관련 요소/텍스트 ---
-  const introOverlay = document.querySelector('.intro-overlay');
-  const introTextEl = document.querySelector('.intro-text');
+    const tooltip          = document.getElementById('planetTooltip');
+    const tooltipTitleText = tooltip.querySelector('.tooltip-title-text');
+    const tooltipDesc      = tooltip.querySelector('.tooltip-desc');
+    const lockIcon         = tooltip.querySelector('.lock-icon');
+    const lockedMsg        = tooltip.querySelector('.locked-msg');
 
-  const introLines = [
-    "(scroll down)",
-    "세상에는 저마다 쥐고 있는 믿음이 있다고 해요.",
-    "‘사랑은 최고의 가치야.', ‘감정은 통제해야해.’, ‘영원한 건 없어.' 등.",
-    "자기 말을 가장 옳다고 믿는 사람들은 서로의 말이 들리지 않는대요.",
-    "살기 위해 만든 믿음들은 이 곳에서 모여 행성을 이루고,",
-    "어떤 사람들은 그 행성 안에 평생 갇힌 채 살아간대요.",
-    "누가 옳은지는 몰라도, 행성들 사이를 탐험하며 말들을 모으고 있어요.",
-    "제가 믿고 살아갈 가치는 무엇일까요?"
-  ];
+    const introOverlay = document.querySelector('.intro-overlay');
+    const introTextEl  = document.querySelector('.intro-text');
 
-  let introDone = false;
-  let introIndex = 0;
-  let introAnimating = false;
+    /* ========================
+       각 행성 → 페이지 매핑
+    ========================= */
+    const planetRoutes = {
+      'The Planet of Relation': 'index2.html',
+      'The Planet of Work'    : 'index3.html',
+      'The Planet of Emotion' : 'index4.html',
+      'The Planet of Ego'     : 'index5.html',
+      'The Planet of Art'     : 'index6.html',
+      'The Planet of Faith'    : 'index7.html'
+    };
 
-  function showIntroLine(index) {
-    introAnimating = true;
-    introTextEl.style.opacity = 0;
+    /* localStorage 키 매핑 */
+    const planetDoneKeys = {
+      'The Planet of Relation': 'relationPlanetDone',
+      'The Planet of Work'    : 'workPlanetDone',
+      'The Planet of Emotion' : 'emotionPlanetDone',
+      'The Planet of Ego'     : 'egoPlanetDone',
+      'The Planet of Art'     : 'artPlanetDone',
+      'The Planet of Faith'    : 'lifePlanetDone'
+    };
 
-    setTimeout(() => {
-      introTextEl.textContent = introLines[index];
-      introTextEl.style.opacity = 1;
+    function isPlanetDone(title) {
+      const key = planetDoneKeys[title];
+      if (!key) return false;
+      return localStorage.getItem(key) === 'true';
+    }
+
+    /* Life 행성 잠금 해제 조건:
+       Relation, Work, Emotion, Ego, Art 가 모두 Done */
+    function isLifeUnlocked() {
+      const required = [
+        'The Planet of Relation',
+        'The Planet of Work',
+        'The Planet of Emotion',
+        'The Planet of Ego',
+        'The Planet of Art'
+      ];
+      return required.every(t => isPlanetDone(t));
+    }
+
+    /* ============================
+       인트로 텍스트
+    ============================= */
+    const introLines = [
+      "(scroll down)",
+      "세상에는 저마다 쥐고 있는 믿음이 있다고 해요.",
+      "‘사랑은 최고의 가치야.', ‘감정은 통제해야해.’, ‘영원한 건 없어.' 등.",
+      "자기 말을 가장 옳다고 믿는 사람들은 서로의 말이 들리지 않는대요.",
+      "살기 위해 만든 믿음들은 이 곳에서 모여 행성을 이루고,",
+      "어떤 사람들은 그 행성 안에 평생 갇힌 채 살아간대요.",
+      "누가 옳은지는 몰라도, 행성들 사이를 탐험하며 말들을 모으고 있어요.",
+      "제가 믿고 살아갈 가치는 무엇일까요?"
+    ];
+
+    let introDone      = false;
+    let introIndex     = 0;
+    let introAnimating = false;
+
+    function showIntroLine(index) {
+      if (!introTextEl) return;
+      introAnimating = true;
+      introTextEl.style.opacity = 0;
+
       setTimeout(() => {
-        introAnimating = false;
-      }, 600);
-    }, 150);
-  }
-
-  function finishIntro() {
-    if (introDone) return;
-    introDone = true;
-
-    if (introOverlay) {
-      introOverlay.style.opacity = 0;
-      setTimeout(() => {
-        introOverlay.style.display = 'none';
-      }, 1000);
+        introTextEl.textContent = introLines[index];
+        introTextEl.style.opacity = 1;
+        setTimeout(() => {
+          introAnimating = false;
+        }, 600);
+      }, 150);
     }
 
-    const titleEl = document.querySelector('.title');
-    if (titleEl) {
-      titleEl.style.opacity = 1;
-    }
+    function finishIntro() {
+      if (introDone) return;
+      introDone = true;
 
-    const introTitleEl = document.querySelector('.intro-title');
-    if (introTitleEl) {
-      introTitleEl.classList.add('hide');
-    }
-
-    walker.style.opacity = 1;
-
-    document.body.style.overflow = 'auto';
-
-    window.removeEventListener('wheel', handleIntroWheel, { passive: false });
-  }
-
-  function handleIntroWheel(e) {
-    if (introDone) return;
-
-    e.preventDefault();
-
-    if (introAnimating) return;
-
-    const threshold = 10;
-
-    if (e.deltaY > threshold) {
-      if (introIndex < introLines.length - 1) {
-        introIndex++;
-        showIntroLine(introIndex);
-      } else {
-        finishIntro();
+      if (introOverlay) {
+        introOverlay.style.opacity = 0;
+        setTimeout(() => {
+          introOverlay.style.display = 'none';
+        }, 1000);
       }
-    } else if (e.deltaY < -threshold) {
-      if (introIndex > 0) {
-        introIndex--;
-        showIntroLine(introIndex);
-      }
-    }
-  }
 
-  // 🔹 페이지 로드 시: URL 파라미터 보고 인트로 스킵 여부 결정
-  window.addEventListener('load', () => {
-    const params = new URLSearchParams(window.location.search);
-    const skipIntro = params.get('skipIntro') === 'true';
-
-    if (skipIntro) {
-      // 👉 인트로를 "완전히 건너뛰고" 바로 메인 상태로 세팅
-      introDone = true;  // 스크롤 애니메이션 바로 작동하도록
-
-      const introOverlayEl = document.querySelector('.intro-overlay');
-      const introTitleEl   = document.querySelector('.intro-title');
-      const introTextEl    = document.querySelector('.intro-text');
-      const titleEl        = document.querySelector('.title');
-
-      // 1) 인트로 관련 요소들은 아예 숨기기
-      if (introOverlayEl) introOverlayEl.style.display = 'none';
-      if (introTitleEl)   introTitleEl.style.display   = 'none';
-      if (introTextEl)    introTextEl.style.display    = 'none';
-
-      // 2) 상단 안내 텍스트는 바로 보이게
+      const titleEl = document.querySelector('.title');
       if (titleEl) titleEl.style.opacity = 1;
 
-      // 3) 걷는 캐릭터도 바로 활성화
+      const introTitleEl = document.querySelector('.intro-title');
+      if (introTitleEl) introTitleEl.classList.add('hide');
+
       if (walker) walker.style.opacity = 1;
+      if (orbitLayer) orbitLayer.style.opacity = 1;
 
-      // 4) 스크롤 막지 않기
       document.body.style.overflow = 'auto';
-    } else {
-      // 👉 평소처럼 인트로부터 시작
-      document.body.style.overflow = 'hidden';
-      showIntroLine(introIndex);
-      window.addEventListener('wheel', handleIntroWheel, { passive: false });
-    }
-  });
+            restoreAnglesFromStorage();
+      window.removeEventListener('wheel', handleIntroWheel);
 
-  /* ============================
-     🔹 회전 상태 + 걷기 상태
-     ============================ */
-  let planetAngle = 0;
-  let orbitAngle = 0;   // ⭐ 다시 추가: 별 궤도 회전 각도
-  let bgAngle = 0;
-
-  const FRAME_WIDTH = 800;
-  const TOTAL_FRAMES = 12;
-  const IDLE_FRAME = 0;
-  let currentFrame = IDLE_FRAME;
-  let stopTimer = null;
-
-  let frameProgress = 0;
-  const FRAME_SPEED_FACTOR = 0.05;
-
-  const CHAR_RATIO = 0.25;
-  const ON_SURFACE_OFFSET = 0.06;
-
-  // 👉 캐릭터 좌우 방향 (1: 기본, -1: 반전)
-  let walkerDirection = 1;
-
-  function positionWalker() {
-    const rect = planet.getBoundingClientRect();
-    const planetSize = rect.width;
-
-    const charSize = planetSize * CHAR_RATIO;
-    const scale = charSize / FRAME_WIDTH;
-
-    // 🔹 방향까지 포함해서 스케일 적용
-    walker.style.transform = `translateX(-50%) scale(${walkerDirection * scale}, ${scale})`;
-
-    const planetTop = rect.top;
-    const baseBottom = window.innerHeight - planetTop;
-    const bottom = baseBottom - planetSize * ON_SURFACE_OFFSET;
-
-    walker.style.bottom = `${bottom}px`;
-  }
-
-  function setWalkerFrame(frameIndex) {
-    const x = -FRAME_WIDTH * frameIndex;
-    walker.style.backgroundPosition = `${x}px 0`;
-  }
-
-  setWalkerFrame(IDLE_FRAME);
-  positionWalker();
-  window.addEventListener('resize', positionWalker);
-
-  /* ============================
-     🔹 “움직임”을 실제로 적용하는 함수
-     ============================ */
-  function applyMotion(rawDelta) {
-    if (!introDone) return;
-    if (!rawDelta) return;
-
-    const direction = rawDelta > 0 ? 1 : -1; // 아래 = 1, 위 = -1
-    const d = Math.abs(rawDelta);
-
-    // 🔹 캐릭터 방향: 아래 스크롤 = 기본, 위 스크롤 = 좌우반전
-    walkerDirection = (direction > 0) ? 1 : -1;
-    positionWalker();
-
-    // 🔹 회전: 행성 + 별 궤도 + 배경
-    planetAngle += direction * d * 0.03;
-    orbitAngle  += direction * d * 0.01;
-    bgAngle     += direction * d * 0.003;
-
-    planet.style.setProperty('--planet-angle', `${planetAngle}deg`);
-
-    if (orbitLayer) {
-      // 원래 쓰던 -30도 오프셋 유지
-      orbitLayer.style.setProperty('--orbit-angle', `${orbitAngle - 30}deg`);
+      updateActivePlanetLabel();
+      syncPlanetBadges();
     }
 
-    bg.style.transform = `translate(-50%, -50%) rotate(${bgAngle}deg)`;
+    function handleIntroWheel(e) {
+      if (introDone) return;
+      e.preventDefault();
+      if (introAnimating) return;
 
-    // --- 걷는 애니메이션 ---
-    let speed = d;
-    if (speed < 0.8) speed = 0.8;
-    if (speed > 8)   speed = 8;
+      const threshold = 10;
 
-    frameProgress += speed * FRAME_SPEED_FACTOR;
-
-    while (frameProgress >= 1) {
-      frameProgress -= 1;
-
-      if (currentFrame === IDLE_FRAME) {
-        currentFrame = 1;
-      } else {
-        currentFrame++;
-        if (currentFrame >= TOTAL_FRAMES) {
-          currentFrame = 1;
+      if (e.deltaY > threshold) {
+        if (introIndex < introLines.length - 1) {
+          introIndex++;
+          showIntroLine(introIndex);
+        } else {
+          finishIntro();
+        }
+      } else if (e.deltaY < -threshold) {
+        if (introIndex > 0) {
+          introIndex--;
+          showIntroLine(introIndex);
         }
       }
-      setWalkerFrame(currentFrame);
     }
 
-    if (stopTimer) clearTimeout(stopTimer);
-    stopTimer = setTimeout(() => {
-      currentFrame = IDLE_FRAME;
-      frameProgress = 0;
-      setWalkerFrame(currentFrame);
-    }, 250);
-  }
+    /* ============================
+       걷기 + 회전 상태
+    ============================= */
+    let planetAngle = 0;
+    let orbitAngle  = 0;
+    let bgAngle     = 0;
 
-  /* ============================
-     🔹 휠로 메인 애니메이션 돌리기
-        (위로 올려도 계속 걷도록)
-     ============================ */
-  function handleMainWheel(e) {
-    if (!introDone) return;
-    applyMotion(e.deltaY);
-  }
+    const FRAME_WIDTH      = 800;
+    const TOTAL_FRAMES     = 12;
+    const IDLE_FRAME       = 0;
+    let currentFrame       = IDLE_FRAME;
+    let stopTimer          = null;
 
-  window.addEventListener('wheel', handleMainWheel, { passive: true });
+    let frameProgress      = 0;
+    const FRAME_SPEED_FACTOR = 0.05;
 
-  /* ============================
-     🔹 툴팁이 별 위치를 따라가도록
-     ============================ */
-  let hoveredDot = null;
-  let tooltipAnimId = null;
+    const CHAR_RATIO       = 0.25;
+    const ON_SURFACE_OFFSET= 0.06;
 
-  function updateTooltipPosition() {
-    if (!hoveredDot) return;
+    let walkerDirection    = 1;
 
-    const rect = hoveredDot.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    /* ============================
+       🌍 고향 행성 각도 저장/복원
+    ============================= */
+    function saveAnglesToStorage() {
+      try {
+        localStorage.setItem('homePlanetAngles', JSON.stringify({
+          planetAngle,
+          orbitAngle,
+          bgAngle
+        }));
+      } catch (e) {
+        // 무시
+      }
+    }
 
-    const offsetX = 80;
-    const offsetY = 0;
+    function restoreAnglesFromStorage() {
+      try {
+        const raw = localStorage.getItem('homePlanetAngles');
+        if (!raw) return;
+        const data = JSON.parse(raw);
 
-    tooltip.style.left = (centerX + offsetX) + 'px';
-    tooltip.style.top  = (centerY + offsetY) + 'px';
+        if (typeof data.planetAngle === 'number') planetAngle = data.planetAngle;
+        if (typeof data.orbitAngle  === 'number') orbitAngle  = data.orbitAngle;
+        if (typeof data.bgAngle     === 'number') bgAngle     = data.bgAngle;
 
-    tooltipAnimId = requestAnimationFrame(updateTooltipPosition);
-  }
+        if (planet) {
+          planet.style.setProperty('--planet-angle', `${planetAngle}deg`);
+        }
+        if (orbitLayer) {
+          orbitLayer.style.setProperty('--orbit-angle', `${orbitAngle}deg`);
+        }
+        if (bg) {
+          bg.style.transform = `translate(-50%, -50%) rotate(${bgAngle}deg)`;
+        }
+      } catch (e) {
+        // 무시
+      }
+    }
 
-  dots.forEach((dot) => {
-    const title = dot.getAttribute('data-title');
-    const desc = dot.getAttribute('data-desc');
+    function positionWalker() {
+      if (!planet || !walker) return;
+      const rect       = planet.getBoundingClientRect();
+      const planetSize = rect.width;
 
-    dot.addEventListener('mouseenter', () => {
-      if (!title) return;
+      const charSize = planetSize * CHAR_RATIO;
+      const scale    = charSize / FRAME_WIDTH;
 
-      hoveredDot = dot;
-      tooltipTitleText.textContent = title;
-      tooltipDesc.innerHTML = (desc || "").replace(/\n/g, "<br>");
+      walker.style.transform = `translateX(-50%) scale(${walkerDirection * scale}, ${scale})`;
 
-      if (title === 'The Planet of Life') {
-        lockIcon.style.display = 'inline-block';
-        lockedMsg.style.display = 'inline';
+      const planetTop  = rect.top;
+      const baseBottom = window.innerHeight - planetTop;
+      const bottom     = baseBottom - planetSize * ON_SURFACE_OFFSET;
+
+      walker.style.bottom = `${bottom}px`;
+    }
+
+    function setWalkerFrame(frameIndex) {
+      if (!walker) return;
+      const x = -FRAME_WIDTH * frameIndex;
+      walker.style.backgroundPosition = `${x}px 0`;
+    }
+
+    setWalkerFrame(IDLE_FRAME);
+    positionWalker();
+    window.addEventListener('resize', () => {
+      positionWalker();
+      updateActivePlanetLabel();
+      syncPlanetBadges();
+    });
+
+    function applyMotion(rawDelta) {
+      if (!introDone) return;
+      if (!rawDelta) return;
+
+      const direction = rawDelta > 0 ? 1 : -1;
+      const d         = Math.abs(rawDelta);
+
+      walkerDirection = (direction > 0) ? 1 : -1;
+      positionWalker();
+
+      planetAngle += direction * d * 0.03;
+      orbitAngle  += direction * d * 0.01;
+      bgAngle     += direction * d * 0.003;
+
+      if (planet) {
+        planet.style.setProperty('--planet-angle', `${planetAngle}deg`);
+      }
+      if (orbitLayer) {
+        orbitLayer.style.setProperty('--orbit-angle', `${orbitAngle}deg`);
+      }
+      if (bg) {
+        bg.style.transform = `translate(-50%, -50%) rotate(${bgAngle}deg)`;
+      }
+
+      // 📌 각도 저장
+      saveAnglesToStorage();
+
+      let speed = d;
+
+      if (speed < 0.8) speed = 0.8;
+      if (speed > 8)   speed = 8;
+
+      frameProgress += speed * FRAME_SPEED_FACTOR;
+
+      while (frameProgress >= 1) {
+        frameProgress -= 1;
+
+        if (currentFrame === IDLE_FRAME) {
+          currentFrame = 1;
+        } else {
+          currentFrame++;
+          if (currentFrame >= TOTAL_FRAMES) currentFrame = 1;
+        }
+        setWalkerFrame(currentFrame);
+      }
+
+      if (stopTimer) clearTimeout(stopTimer);
+      stopTimer = setTimeout(() => {
+        currentFrame   = IDLE_FRAME;
+        frameProgress  = 0;
+        setWalkerFrame(currentFrame);
+      }, 250);
+    }
+
+    function handleMainWheel(e) {
+      if (!introDone) return;
+      applyMotion(e.deltaY);
+      updateActivePlanetLabel();
+      syncPlanetBadges();
+    }
+
+    window.addEventListener('wheel', handleMainWheel, { passive: true });
+
+    /* ============================
+       현재 캐릭터 아래 행성 제목
+    ============================= */
+    function updateActivePlanetLabel() {
+      if (!planetLabelEl) return;
+
+      if (!introDone) {
+        planetLabelEl.classList.remove('visible');
+        planetLabelEl.textContent = '';
+        return;
+      }
+
+      const centerX = window.innerWidth / 2;
+      let closestDot = null;
+      let closestDx  = Infinity;
+
+      dots.forEach(dot => {
+        const rect       = dot.getBoundingClientRect();
+        const dotCenterX = rect.left + rect.width / 2;
+        const dx         = dotCenterX - centerX;
+
+        if (Math.abs(dx) < closestDx) {
+          closestDx  = Math.abs(dx);
+          closestDot = dot;
+        }
+      });
+
+      const THRESHOLD = 90;
+
+      if (closestDot && closestDx < THRESHOLD) {
+        const title = closestDot.getAttribute('data-title') || '';
+        if (title) {
+          planetLabelEl.textContent = title;
+          planetLabelEl.classList.add('visible');
+        } else {
+          planetLabelEl.classList.remove('visible');
+        }
       } else {
-        lockIcon.style.display = 'none';
+        planetLabelEl.classList.remove('visible');
+      }
+    }
+
+    /* ============================
+       ★ 탐험완료 뱃지 생성/위치 갱신
+    ============================= */
+    const planetBadgeMap = new Map(); // dot → { badge, connector }
+
+    function ensureBadgeForDot(dot) {
+      if (planetBadgeMap.has(dot)) return planetBadgeMap.get(dot);
+
+      const badge = document.createElement('div');
+      badge.className = 'planet-badge no-select';
+      badge.innerHTML = `
+        <div class="planet-badge-circle">✓</div>
+        <div class="planet-badge-text">탐험완료</div>
+      `;
+
+      const connector = document.createElement('div');
+      connector.className = 'planet-connector';
+      connector.innerHTML = `
+        <div class="planet-connector-line planet-connector-diag"></div>
+        <div class="planet-connector-line planet-connector-horiz"></div>
+      `;
+
+      document.body.appendChild(badge);
+      document.body.appendChild(connector);
+
+      const pair = { badge, connector };
+      planetBadgeMap.set(dot, pair);
+      return pair;
+    }
+
+    function updateBadgePositionForDot(dot, pair) {
+      const rect = dot.getBoundingClientRect();
+
+      const starCenterX = rect.left + rect.width / 2;
+      const starCenterY = rect.top + rect.height / 2;
+
+      const offsetX = 40;
+      const offsetY = -26;
+
+      pair.badge.style.left = (starCenterX + offsetX) + 'px';
+      pair.badge.style.top  = (starCenterY + offsetY) + 'px';
+
+      pair.connector.style.left = starCenterX + 'px';
+      pair.connector.style.top  = starCenterY + 'px';
+    }
+
+    function syncPlanetBadges() {
+      if (!introDone) return;
+
+      dots.forEach(dot => {
+        const title = dot.getAttribute('data-title');
+        if (!title) return;
+
+        const done = isPlanetDone(title);
+        let pair   = planetBadgeMap.get(dot);
+
+        if (!done) {
+          if (pair) {
+            pair.badge.style.display     = 'none';
+            pair.connector.style.display = 'none';
+          }
+          return;
+        }
+
+        pair = ensureBadgeForDot(dot);
+        pair.badge.style.display     = 'flex';
+        pair.connector.style.display = 'block';
+
+        updateBadgePositionForDot(dot, pair);
+      });
+      updateTitleWhenAllDone();
+
+    }
+
+    /* ============================
+       툴팁
+    ============================= */
+    let hoveredDot   = null;
+    let tooltipAnimId = null;
+
+    function updateTooltipPosition() {
+      if (!hoveredDot) return;
+
+      const rect     = hoveredDot.getBoundingClientRect();
+      const centerX  = rect.left + rect.width / 2;
+      const centerY  = rect.top + rect.height / 2;
+
+      const offsetX  = 80;
+      const offsetY  = 0;
+
+      tooltip.style.left = (centerX + offsetX) + 'px';
+      tooltip.style.top  = (centerY + offsetY) + 'px';
+
+      tooltipAnimId = requestAnimationFrame(updateTooltipPosition);
+    }
+
+    dots.forEach(dot => {
+      const title = dot.getAttribute('data-title');
+      const desc  = dot.getAttribute('data-desc');
+
+      dot.addEventListener('mouseenter', () => {
+        if (!title) return;
+
+        hoveredDot = dot;
+        tooltipTitleText.textContent = title;
+        tooltipDesc.innerHTML = (desc || "").replace(/\n/g, "<br>");
+
+        // Life 행성 잠금 상태에 따라 자물쇠/메시지 표시
+        if (title === 'The Planet of Faith' && !isLifeUnlocked()) {
+          lockIcon.style.display = 'inline-block';
+          lockedMsg.style.display = 'inline';
+        } else {
+          lockIcon.style.display = 'none';
+          lockedMsg.style.display = 'none';
+        }
+
+        tooltip.style.opacity   = '1';
+        tooltip.style.visibility = 'visible';
+
+        if (tooltipAnimId) cancelAnimationFrame(tooltipAnimId);
+        updateTooltipPosition();
+      });
+
+      dot.addEventListener('mouseleave', () => {
+        hoveredDot = null;
+        if (tooltipAnimId) {
+          cancelAnimationFrame(tooltipAnimId);
+          tooltipAnimId = null;
+        }
+        tooltip.style.opacity   = '0';
+        tooltip.style.visibility = 'hidden';
+
+        lockIcon.style.display  = 'none';
         lockedMsg.style.display = 'none';
-      }
+      });
 
-      tooltip.style.opacity = '1';
-      tooltip.style.visibility = 'visible';
+      dot.addEventListener('click', () => {
+        if (!title) return;
 
-      if (tooltipAnimId) cancelAnimationFrame(tooltipAnimId);
-      updateTooltipPosition();
+        // Life 행성 잠겨 있으면 이동 막기
+        if (title === 'The Planet of Faith' && !isLifeUnlocked()) {
+          // 필요하면 alert 대신 조용히 무시
+          alert('다른 5개의 행성을 먼저 탐험해야 이 행성에 접근할 수 있습니다.');
+          return;
+        }
+
+        const url = planetRoutes[title];
+        if (url) {
+                    saveAnglesToStorage();
+  brownLoadAndGo(url);
+
+        }
+        console.log('Clicked:', title);
+      });
     });
 
-    dot.addEventListener('mouseleave', () => {
-      hoveredDot = null;
-      if (tooltipAnimId) {
-        cancelAnimationFrame(tooltipAnimId);
-        tooltipAnimId = null;
+    /* ============================
+       onload: 인트로 + 상태 초기화
+    ============================= */
+    window.addEventListener('load', () => {
+      syncPlanetBadges();
+      updateTitleWhenAllDone();
+
+      const params   = new URLSearchParams(window.location.search);
+      const skipIntro = params.get('skipIntro') === 'true';
+
+      if (skipIntro) {
+        introDone = true;
+
+        const introOverlayEl = document.querySelector('.intro-overlay');
+        const introTitleEl   = document.querySelector('.intro-title');
+        const introTextEl2   = document.querySelector('.intro-text');
+        const titleEl        = document.querySelector('.title');
+
+        if (introOverlayEl) introOverlayEl.style.display = 'none';
+        if (introTitleEl)   introTitleEl.style.display   = 'none';
+        if (introTextEl2)   introTextEl2.style.display   = 'none';
+
+        if (titleEl) titleEl.style.opacity = 1;
+        if (walker)  walker.style.opacity  = 1;
+        if (orbitLayer) orbitLayer.style.opacity = 1;
+
+        document.body.style.overflow = 'auto';
+              restoreAnglesFromStorage();
+        updateActivePlanetLabel();
+        syncPlanetBadges();
+      } else {
+        document.body.style.overflow = 'hidden';
+        showIntroLine(introIndex);
+        window.addEventListener('wheel', handleIntroWheel, { passive: false });
       }
-      tooltip.style.opacity = '0';
-      tooltip.style.visibility = 'hidden';
-
-      lockIcon.style.display = 'none';
-      lockedMsg.style.display = 'none';
     });
+    function updateTitleWhenAllDone() {
+  const titleEl = document.querySelector(".title");
+  if (!titleEl) return;
 
-    dot.addEventListener('click', () => {
-      if (title === 'The Planet of Relation') {
-        window.location.href = 'index2.html';
-      }
-      console.log('Clicked:', title);
-    });
-  });
-</script>
+  // Life 행성 잠금 해제되면 (= 5개 완료되면)
+  if (isLifeUnlocked()) {
+    titleEl.textContent = "5개의 행성 탐사를 완료했습니다. 마지막으로 신념의 행성에 진입해보세요.";
+  } else {
+    titleEl.textContent = "탐사할 행성을 선택하세요";
+  }
+}
 
+    /* ===========================
+   🌙 로딩 화면 자동 제거
+=========================== */
+window.addEventListener("load", () => {
+  const loader = document.getElementById("loading-screen");
 
+  // 0.2초 기다렸다가 (너무 번쩍 사라지는 것 방지)
+  setTimeout(() => {
+    loader.style.opacity = 0;
+
+    // 화면에서 완전히 제거
+    setTimeout(() => {
+      loader.style.display = "none";
+    }, 1000); // transition 1s와 동일
+  }, 300);
+});
+function brownLoadAndGo(url) {
+  const loader = document.getElementById("loading-screen");
+  if (!loader) {
+    window.location.href = url;
+    return;
+  }
+
+  // 갈색 로딩을 다시 보여주기
+  loader.style.display = "flex";
+  loader.style.opacity = "1";
+
+  // 약간 기다렸다가 이동 (로딩 애니메이션 보이도록)
+  setTimeout(() => {
+    window.location.href = url;
+  }, 500);
+}
+
+  </script>
+  <div id="loading-screen">
+  <div class="loading-circle"></div>
+  <div class="loading-text">Loading...</div>
+</div>
 </body>
 </html>

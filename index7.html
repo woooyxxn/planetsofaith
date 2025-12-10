@@ -18,23 +18,6 @@ body {
 body::-webkit-scrollbar {
   display: none;
 }
-/* ==========================
-   🌕 페이지 전환용 페이드
-========================== */
-#page-transition {
-  position: fixed;
-  inset: 0;
-  background: white;
-  z-index: 999998;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-}
-
-/* 페이지 떠날 때 활성화 */
-#page-transition.active {
-  opacity: 1;
-}
 
 /* 드래그 방지용 공통 클래스 */
 .no-select {
@@ -70,6 +53,7 @@ body::-webkit-scrollbar {
   text-shadow: 0 0 8px rgba(0,0,0,0.6);
   z-index: 20;
   transition: opacity 0.25s ease;
+  white-space: nowrap;
 }
 
 /* 수집 개수 카운터 (가운데) */
@@ -102,10 +86,10 @@ body::-webkit-scrollbar {
   }
 }
 
-/* 최대 개수 안내 텍스트 */
+/* 최대 개수 안내 텍스트 → Life에서는 설명용 문구로만 사용 */
 .collect-limit {
   position: fixed;
-  top: 135px; /* 카운터 바로 아래 */
+  top: 135px;
   left: 50%;
   transform: translateX(-50%);
   font-family: "Gowun Batang", serif;
@@ -136,7 +120,7 @@ body::-webkit-scrollbar {
   background: url("planet0.png") center top / cover no-repeat;
   transform-origin: 50% 50%;
   transform: rotate(var(--planet-angle, 0deg));
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 /* 배경 우주 레이어 */
@@ -160,11 +144,11 @@ body::-webkit-scrollbar {
   transform-origin: 50% 50%;
   z-index: 15;
   opacity: 1;
-  pointer-events: none; 
+  pointer-events: none;
   transition: opacity 1s ease;
 }
 
-/* ⭐ 고향별 앵커 + 링 있는 스타일 */
+/* 고향별 앵커 */
 .orbit-dot {
   transform-style: preserve-3d;
   position: absolute;
@@ -222,22 +206,6 @@ body::-webkit-scrollbar {
   opacity: 0.7;
   animation: orbitPulse 2.6s ease-in-out infinite;
   pointer-events: none;
-}
-
-/* 호버 시: 코어 강조 */
-.orbit-dot:hover::after {
-  transform: translate(-50%, -50%) scale(1.5);
-  animation: none;
-  box-shadow:
-    0 0 6px rgba(255,255,255,1),
-    0 0 20px rgba(255,255,255,1),
-    0 0 32px rgba(255,255,255,1);
-}
-
-/* 링도 살짝 강조 */
-.orbit-dot:hover::before {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.05);
 }
 
 /* 별 반짝임 */
@@ -314,18 +282,18 @@ body::-webkit-scrollbar {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 18vw;   /* 말풍선이 숨쉴 수 있게 가로 폭 넓게 */
+  width: 18vw;
   height: 18vw;
   transform-origin: 50% 50%;
-  cursor: pointer;
+  cursor: default;
 }
 
-/* 🔹 외계인 스프라이트: 크기는 따로 제어 (말풍선 폭과 분리) */
+/* 🔹 외계인 스프라이트 */
 .alien-sprite {
   position: absolute;
   bottom: 0;
   left: 50%;
-  width: 16vw;     /* 실제 외계인 크기 */
+  width: 16vw;
   height: 16vw;
   transform: translateX(-50%);
   transform-origin: 50% 100%;
@@ -341,37 +309,31 @@ body::-webkit-scrollbar {
     drop-shadow(0 0 25px rgba(244, 228, 220, 0.7));
 }
 
-/* 말풍선 (각 외계인 전용) */
+/* 말풍선 */
 .alien-bubble {
   position: absolute;
   left: 50%;
   bottom: calc(100% - 24px);
   transform: translateX(-50%);
-
   display: inline-block;
-
   background: #F4E4DC;
   color: #2a231f;
   font-family: "Gowun Batang", serif;
   font-size: 0.75rem;
   line-height: 1.4;
-
   padding: 6px 10px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-
   max-width: 120px;
-  width: auto;
   white-space: normal;
   word-break: break-all;
-
   opacity: 0;
   z-index: 9;
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
 
-/* 말풍선 꼬리 (위쪽 버전) */
+/* 말풍선 꼬리 */
 .alien-bubble::after {
   content: "";
   position: absolute;
@@ -385,7 +347,7 @@ body::-webkit-scrollbar {
   border-top: 6px solid #F4E4DC;
 }
 
-/* 말풍선 보이기 상태 */
+/* Life 행성에서는 항상 보이게 */
 .alien-bubble.visible,
 .alien-bubble.selected {
   opacity: 1;
@@ -402,17 +364,12 @@ body::-webkit-scrollbar {
   100% { transform: translateX(-50%) translateY(0) scale(1.10); }
 }
 
-/* 호버 → 점프 */
-.alien-slot:hover .alien-sprite:not(.pop) {
+/* 호버 없어도 계속 점프 */
+.alien-sprite.selected {
   animation: alien-bouncy-jump 0.45s infinite cubic-bezier(.28, .84, .42, 1);
 }
 
-/* 선택된 애들 → 호버 없어도 계속 점프 */
-.alien-sprite.selected:not(.pop) {
-  animation: alien-bouncy-jump 0.45s infinite cubic-bezier(.28, .84, .42, 1);
-}
-
-/* 클릭 시: 잠깐 작아졌다가 통! 하고 돌아오기 */
+/* 클릭 팝 애니는 Life에서는 안 씀, 남겨만 둠 */
 @keyframes alien-click-pop {
   0% {
     transform: translateX(-50%) translateY(0) scale(1);
@@ -424,8 +381,6 @@ body::-webkit-scrollbar {
     transform: translateX(-50%) translateY(0) scale(1.05);
   }
 }
-
-/* 클릭 팝 애니메이션 */
 .alien-sprite.pop {
   animation: alien-click-pop 0.2s ease-out;
 }
@@ -448,7 +403,7 @@ html::-webkit-scrollbar {
   display: none;
 }
 
-/* 🔹 별 모양 파편 */
+/* 🔹 별 모양 파편 (혹시 나중에 쓸 수 있으니 남겨둠) */
 .particle {
   position: fixed;
   width: 12px;
@@ -471,12 +426,10 @@ html::-webkit-scrollbar {
     0 0 30px rgba(244, 228, 220, 0.8);
   pointer-events: none;
   z-index: 40;
-
   transform: translate(0, 0) scale(1);
   animation: particleExplode 1s cubic-bezier(.12,.78,.36,.99) forwards;
 }
 
-/* 🔹 더 멀리 세게 날아가는 애니메이션 */
 @keyframes particleExplode {
   0% {
     transform: translate(0, 0) scale(1.2);
@@ -489,121 +442,11 @@ html::-webkit-scrollbar {
 }
 
 /* ◀▶ 화살표 버튼 */
-.relation-prev-btn,
-.relation-next-btn {
-  display: inline-block;
-  width: 0;
-  height: 0;
-  cursor: pointer;
-  vertical-align: middle;
-  transition: transform 0.2s ease, filter 0.2s ease;
-  position: relative; /* 히트박스 확장용 기준 */
-}
 
-/* 히트박스 넓히기 (투명 박스) */
-.relation-prev-btn::before,
-.relation-next-btn::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
-}
 
-/* ◀ 이전 버튼 */
-.relation-prev-btn {
-  margin-right: 14px;
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-right: 14px solid #F4E4DC;
-}
-
-/* ▶ 다음 버튼 */
-.relation-next-btn {
-  margin-left: 14px;
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-left: 14px solid #F4E4DC;
-}
-
-/* hover 효과 */
-.relation-prev-btn:hover {
-  transform: translateX(-3px);
-  filter: drop-shadow(0 0 6px rgba(244, 228, 220, 0.8));
-}
-
-.relation-next-btn:hover {
-  transform: translateX(3px);
-  filter: drop-shadow(0 0 6px rgba(244, 228, 220, 0.8));
-}
-
-/* 🔻 하단 저장 / 수정 버튼 영역 */
+/* Life 행성에서는 저장/수정 버튼 안 쓰므로 숨김 */
 .bottom-controls {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-  z-index: 30;
-  font-family: "Gowun Batang", serif;
-}
-
-/* 공통 버튼 스타일 – 깊은 갈색 배경 */
-.bottom-controls button {
-  min-width: 110px;
-  padding: 7px 14px;
-  border-radius: 9px;
-  border: 1px solid rgba(244, 228, 220, 0.65);
-
-  background: rgba(58, 46, 40, 0.75); /* 깊은 갈색 */
-  color: #F4E4DC;
-  font-size: 0.82rem;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-
-  box-shadow: 0 4px 10px rgba(60, 45, 35, 0.55);
-
-  transition:
-    background 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease,
-    opacity 0.18s ease;
-}
-
-/* hover 그림자도 갈색 기반으로 */
-.bottom-controls button:hover:not(.saved) {
-  background: rgba(78, 62, 52, 0.88);
-  border-color: rgba(244, 228, 220, 0.9);
-  box-shadow: 0 6px 14px rgba(74, 58, 46, 0.55);
-  transform: translateY(-1px);
-}
-
-/* 저장된 상태 그림자 */
-.save-btn.saved {
-  background: rgba(244, 228, 220, 0.92);
-  color: #2a231f;
-  border-color: rgba(244, 228, 220, 0.92);
-  box-shadow: 0 4px 12px rgba(64, 48, 38, 0.40);
-  cursor: default;
-}
-
-/* 저장됨일 때 hover 변화 최소화 */
-.save-btn.saved:hover {
-  background: rgba(244, 228, 220, 0.92);
-  transform: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-}
-
-/* 수정하기 버튼 */
-.edit-btn {
-  opacity: 0.85;
-}
-.edit-btn:hover {
-  opacity: 1;
-  background: rgba(78, 62, 52, 0.4);
+  display: none;
 }
 </style>
 </head>
@@ -618,22 +461,20 @@ html::-webkit-scrollbar {
     <div class="orbit-layer">
       <div class="orbit-dot"
            data-title="Go Home"
-           data-desc="탐험을 마친 뒤 고향별로 돌아갑니다."></div>
+           data-desc="처음 행성들로 돌아갑니다."></div>
     </div>
 
-    <!-- 외계인들: JS가 35마리 채울 예정 -->
+    <!-- 외계인들: JS가 각 행성에서 모은 것들을 채울 예정 -->
     <div class="alien-layer"></div>
   </div>
 
   <!-- 상단 텍스트들 -->
   <div class="main-heading no-select">
-    <span class="relation-prev-btn"></span>
-    The Planet of Relation
-    <span class="relation-next-btn"></span>
+The Planet of Faith
   </div>
-  <div class="title no-select">행성을 탐험하며, 마음에 드는 말들을 클릭해 수집해보세요.</div>
-  <div class="collect-counter no-select">수집한 갯수 : 0</div>
-  <div class="collect-limit no-select">*최대 10개*</div>
+  <div class="title no-select">
+    다른 행성에서 저장한 말들이 이곳에 모입니다.
+  </div>
 
   <!-- 걷는 캐릭터 -->
   <div class="walker"></div>
@@ -644,14 +485,13 @@ html::-webkit-scrollbar {
     <div class="tooltip-desc"></div>
   </div>
 
-  <!-- 하단 저장 / 수정 버튼 -->
+  <!-- (Life에서는 안 쓰지만, 구조 맞추려고 남겨둔 영역) -->
   <div class="bottom-controls no-select">
     <button class="save-btn" type="button">저장하기</button>
     <button class="edit-btn" type="button" style="display:none;">수정하기</button>
   </div>
 
 <script>
-
 /* ============================
    기본 요소 선택
 ============================ */
@@ -659,41 +499,23 @@ const planet = document.querySelector('.planet');
 const bg = document.querySelector('.bg-layer');
 const walker = document.querySelector('.walker');
 const orbitLayer = document.querySelector('.orbit-layer');
-const dots = document.querySelectorAll('.orbit-dot');
 const alienLayer = document.querySelector('.alien-layer');
+const dots = document.querySelectorAll('.orbit-dot');
 
 const tooltip = document.getElementById('planetTooltip');
 const tooltipTitle = tooltip.querySelector('.tooltip-title');
 const tooltipDesc = tooltip.querySelector('.tooltip-desc');
 
-/* 🔢 수집 카운터 */
-let collected = 0;
-const MAX_COLLECT = 10;
 const counterEl = document.querySelector('.collect-counter');
-
-/* 🔐 저장 상태 */
-let isSaved = false;
-const saveBtn = document.querySelector('.save-btn');
-const editBtn = document.querySelector('.edit-btn');
-
-/* 선택된 인덱스 저장용 */
-let selectedIndices = [];
-
-/* 카운터 텍스트 업데이트 */
-function updateCounter(bump = true) {
-  if (!counterEl) return;
-  counterEl.textContent = `수집한 말: ${collected}`;
-  if (bump) {
-    counterEl.classList.remove('bump');
-    void counterEl.offsetWidth; // reflow
-    counterEl.classList.add('bump');
-  }
-}
+const titleEl = document.querySelector('.title');
 
 /* ============================
-   외계인 대사 리스트
+   각 행성의 문장 배열
+   (각 index2~index6 에서 쓰는 것과 100% 동일하게 맞춰야 함!)
 ============================ */
-const ALIEN_LINES = [
+
+/* 관계관 행성에서 쓰는 문장들 (지금 index7에 있던 ALIEN_LINES 그대로 복사) */
+const RELATION_LINES = [
   "깊은 이야기를 나눌 수 있는 사람들이 좋아요.","사람들과 깊은 이야기를 하는 것이 힘들어요.",
   "취약함을 공유할 수 있는 사람이 좋아.","타인에게 취약한 모습을 보이는 것은 좋지 않아요.",
   "갈등은 관계가 돈독해지는 건강한 과정이에요.","좋아하는 사람일수록 더 소극적이에요.",
@@ -714,170 +536,183 @@ const ALIEN_LINES = [
   "사람과 가까워질수록 더 조심히 다뤄야해요."
 ];
 
-const ALIEN_IMAGES = [
-  "alien1.png","alien2.png","alien3.png","alien4.png","alien5.png","alien6.png","alien7.png"
+/* 아래 네 배열은 예시야.
+   ─ 실제 index3~6에 사용한 문장들로 바꿔 넣어줘야, 인덱스가 정확히 맞아. */
+
+/* 직업관 행성 (index3) */
+const WORK_LINES = [
+  "자아를 실현하는 일보다는 안정적인 수입원이 좋아요.","수입이 적더라도 자아를 실현할 수 있는 일이 좋아요.",
+  "반복 업무가 많은 일이 좋아요.","변화가 가득한 일이 좋아요.",
+  "잘하는 일보다는 좋아하는 일을 해야 해요.","좋아하는 일보다는 잘하는 일을 해야 해요.",
+  "야근이 잦아도 성취감이 크면 괜찮아요.","퇴근 후 내 시간이 보장되는 일이 중요해요.",
+  "사람을 상대하는 일보다 혼자 집중하는 일이 편해요.","사람을 상대하는 일이 많을수록 재밌어요.",
+  "명확한 매뉴얼이 있는 일이 좋아요.","스스로 방법을 찾아야 하는 일이 좋아요.",
+  "성과가 숫자로 보이는 일이 좋아요.","눈에 보이지 않는 변화를 만드는 일이 좋아요.",
+  "회사에서 인정받는 것이 중요해요.","내가 나 자신에게 떳떳한 게 더 중요해요.",
+  "언제든 떠날 수 있는 유연한 일이 좋아요.","한 곳에서 오래 버텨내는 것이 중요해요.",
+  "팀으로 일하는 환경이 좋아요.","혼자서 전체를 책임지는 일이 좋아요."
 ];
 
+/* 감정관 행성 (index4) */
+const EMOTION_LINES = [
+  "감정을 솔직하게 표현해야 관계가 유지된다고 믿어요.",
+  "감정은 최대한 숨기고 스스로 처리하는 편이 안전해요.",
+  "울고 싶을 때 울 수 있는 사람이 건강한 사람이에요.",
+  "눈물은 약함이 아니라 회복을 위한 과정이라고 생각해요.",
+  "기분이 나쁘면 바로 말해야 쌓이지 않아요.",
+  "한 번 참으면 관계가 부드럽게 유지된다고 믿어요.",
+  "감정은 기록해두면 덜 무서워져요.",
+  "감정은 지나가게 두는 게 가장 좋은 방법이에요."
+];
+
+/* 자아관 행성 (index5) */
+const EGO_LINES = [
+  "나는 상황에 따라 계속 변하는 존재라고 느껴요.",
+  "나는 변하지 않는 어떤 ‘핵심’이 있다고 믿어요.",
+  "다른 사람의 시선이 나를 정의하는 데 영향을 많이 줘요.",
+  "나는 결국 내가 나를 어떻게 보는지가 더 중요하다고 생각해요.",
+  "내가 싫은 나도 나의 일부라고 받아들이려 해요.",
+  "싫은 나의 모습은 가능한 한 없애야 한다고 생각해요.",
+  "자아를 찾는 일은 평생 지속되는 탐험 같아요.",
+  "언젠가 ‘완성된 나’를 발견하게 될 거라고 믿어요."
+];
+
+/* 예술관/가치관 행성 (index6 - Art) */
+const ART_LINES = [
+  "예술은 삶을 버티게 해주는 장치라고 생각해요.",
+  "예술은 특별한 사람들만 할 수 있는 일이라고 느껴요.",
+  "결과물이 예쁘지 않아도 과정이 진심이면 의미가 있어요.",
+  "완성도가 떨어지면 진심이어도 부끄럽다고 느껴요.",
+  "예술은 혼자 하는 싸움에 더 가깝다고 생각해요.",
+  "예술은 결국 누군가에게 닿을 때 완성된다고 믿어요.",
+  "작업의 속도보다 꾸준함이 더 중요해요.",
+  "번아웃이 와도 다시 만들고 싶다면 진짜 좋아하는 거예요."
+];
+
+/* 행성별 localStorage 키 정보 */
+const PLANET_CONFIGS = [
+  {
+    id: "relation",
+    doneKey: "relationPlanetDone",
+    selectionKey: "relationPlanetSelections",
+    lines: RELATION_LINES
+  },
+  {
+    id: "work",
+    doneKey: "workPlanetDone",
+    selectionKey: "workPlanetSelections",
+    lines: WORK_LINES
+  },
+  {
+    id: "emotion",
+    doneKey: "emotionPlanetDone",
+    selectionKey: "emotionPlanetSelections",
+    lines: EMOTION_LINES
+  },
+  {
+    id: "ego",
+    doneKey: "egoPlanetDone",
+    selectionKey: "egoPlanetSelections",
+    lines: EGO_LINES
+  },
+  {
+    id: "art",
+    doneKey: "artPlanetDone",
+    selectionKey: "artPlanetSelections",
+    lines: ART_LINES
+  }
+];
+
+const SPRITE_CLASSES = ["alien1","alien2","alien3","alien4","alien5","alien6","alien7"];
+
 /* ============================
-   외계인 35개 배치
+   모든 행성에서 저장된 말 모아서 외계인 생성
 ============================ */
-alienLayer.innerHTML = "";
-const ALIEN_COUNT = 35;
-const RADIUS_VW = -95;
+function loadAllSelectedSentences() {
+  const result = [];
 
-for (let i = 0; i < ALIEN_COUNT; i++) {
-  const slot = document.createElement('div');
-  slot.className = 'alien-slot';
-  slot.dataset.index = String(i);
+  PLANET_CONFIGS.forEach((cfg) => {
+    const done = localStorage.getItem(cfg.doneKey) === "true";
+    if (!done) return; // 해당 행성에서 '저장하기' 안 눌렀으면 패스
 
-  const sprite = document.createElement('div');
-  sprite.className = 'alien-sprite';
-  sprite.style.backgroundImage = `url("${ALIEN_IMAGES[i % 7]}")`;
+    let indices = [];
+    try {
+      const raw = localStorage.getItem(cfg.selectionKey);
+      if (raw) indices = JSON.parse(raw);
+    } catch (e) {
+      indices = [];
+    }
+    if (!Array.isArray(indices)) return;
 
-  const bubble = document.createElement('div');
-  bubble.className = 'alien-bubble';
-  bubble.textContent = ALIEN_LINES[i];
+    indices.forEach((rawIdx) => {
+      const idx = Number(rawIdx);
+      if (!Number.isInteger(idx)) return;
+      const text = cfg.lines[idx];
+      if (!text) return;
 
-  slot.appendChild(sprite);
-  slot.appendChild(bubble);
+      result.push({
+        planetId: cfg.id,
+        index: idx,
+        text
+      });
+    });
+  });
 
-  const angle = (360 / ALIEN_COUNT) * i;
-  slot.style.transform =
-    `translate(-50%, -50%) rotate(${angle}deg) translateY(${RADIUS_VW}vw)`;
-
-  alienLayer.appendChild(slot);
+  return result;
 }
 
-/* 슬롯 다시 선택 */
-const alienSlots = document.querySelectorAll('.alien-slot');
+function buildAliensOnLifePlanet() {
+  const collected = loadAllSelectedSentences();
+  alienLayer.innerHTML = "";
 
-/* ============================
-   🔁 저장된 상태 복원
-============================ */
-/* ============================
-   🔁 저장된 상태 복원
-============================ */
-function applySavedStateIfAny() {
-  // 1) 선택 인덱스 배열 읽기
-  let savedSel = [];
-  try {
-    const raw = localStorage.getItem('relationPlanetSelections');
-    if (raw) savedSel = JSON.parse(raw);
-  } catch (e) {
-    savedSel = [];
-  }
-
-  // 선택값이 하나도 없으면 → 그냥 초기 상태
-  if (!Array.isArray(savedSel) || savedSel.length === 0) {
-    collected = 0;
-    selectedIndices = [];
-    updateCounter(false);
+  if (!collected.length) {
+    if (counterEl) counterEl.textContent = "지금까지 모은 말: 0";
+    if (titleEl) titleEl.textContent = "아직 다른 행성에서 저장한 말이 없어요.";
     return;
   }
 
-  // 선택값은 있되, "완전히 저장된 상태"인지 여부는 별도 플래그로 판단
-  const done = localStorage.getItem('relationPlanetDone') === 'true';
+  const total = collected.length;
+  const radiusVW = -95;
 
-  selectedIndices = savedSel
-    .map(n => Number(n))
-    .filter(i => Number.isInteger(i) && i >= 0 && i < alienSlots.length);
+  collected.forEach((item, i) => {
+    const slot = document.createElement("div");
+    slot.className = "alien-slot";
 
-  collected = selectedIndices.length;
-  updateCounter(false);
+    const sprite = document.createElement("div");
+    const spriteClass = SPRITE_CLASSES[item.index % SPRITE_CLASSES.length];
+    sprite.className = `alien-sprite ${spriteClass} selected glow`;
 
-  selectedIndices.forEach(i => {
-    const slot   = alienSlots[i];
-    if (!slot) return;
-    const bubble = slot.querySelector('.alien-bubble');
-    const sprite = slot.querySelector('.alien-sprite');
-    if (!bubble || !sprite) return;
+    const bubble = document.createElement("div");
+    bubble.className = "alien-bubble selected visible";
+    bubble.textContent = item.text;
 
-    bubble.classList.add('selected', 'visible');
-    sprite.classList.add('glow', 'selected');
+    slot.appendChild(sprite);
+    slot.appendChild(bubble);
+
+    const angle = (360 / total) * i;
+    slot.style.transform =
+      `translate(-50%, -50%) rotate(${angle}deg) translateY(${radiusVW}vw)`;
+
+    alienLayer.appendChild(slot);
   });
 
-  // ✅ done 여부에 따라 버튼 상태만 달리
-  if (done) {
-    isSaved = true;
-    saveBtn.textContent = "저장됨 ✓";
-    saveBtn.classList.add("saved");
-    editBtn.style.display = "inline-block";
-  } else {
-    isSaved = false; // 선택은 복원되지만, 아직 '저장됨' 상태는 아님
-    saveBtn.textContent = "저장하기";
-    saveBtn.classList.remove("saved");
-    editBtn.style.display = "none";
+  if (counterEl) {
+    counterEl.textContent = `지금까지 모은 말: ${total}`;
+    counterEl.classList.remove("bump");
+    void counterEl.offsetWidth;
+    counterEl.classList.add("bump");
+  }
+
+  if (titleEl) {
+    titleEl.textContent = "이곳은, 지금까지 모은 말들이 모여있는 당신만의 신념의 행성입니다.";
   }
 }
 
-
-/* 페이지 들어오자마자 복원 시도 */
-applySavedStateIfAny();
-
-/* ============================
-   말풍선 + 선택 반응 (수집 카운터 + 잠금 상태 반영)
-============================ */
-alienSlots.forEach(slot => {
-  const bubble = slot.querySelector('.alien-bubble');
-  const sprite = slot.querySelector('.alien-sprite');
-
-  slot.addEventListener("mouseenter", () => {
-    if (isSaved) return; // 저장된 상태면 hover 막기
-    bubble.classList.add("visible");
-  });
-
-  slot.addEventListener("mouseleave", () => {
-    if (isSaved) return;
-    if (!bubble.classList.contains("selected"))
-      bubble.classList.remove("visible");
-  });
-
-  // 클릭 토글 + 수집 로직
-  slot.addEventListener("click", () => {
-    if (isSaved) return; // 🔐 저장 상태에서는 더 이상 선택 불가
-
-    const idx = Number(slot.dataset.index);
-    const now = !bubble.classList.contains("selected");
-
-    // 클릭 팝
-    sprite.classList.add("pop");
-    setTimeout(() => sprite.classList.remove("pop"), 220);
-
-    if (now) {
-      // 새로 선택하려고 할 때
-      if (collected >= MAX_COLLECT) {
-        updateCounter(true); // 최대면 카운터만 통!
-        return;
-      }
-
-      bubble.classList.add("selected", "visible");
-      sprite.classList.add("glow", "selected");
-      spawnParticlesAt(sprite);
-
-      collected++;
-      updateCounter(true);
-
-      if (!selectedIndices.includes(idx)) {
-        selectedIndices.push(idx);
-      }
-    } else {
-      // 선택 해제
-      bubble.classList.remove("selected", "visible");
-      sprite.classList.remove("glow", "selected");
-
-      if (collected > 0) collected--;
-      updateCounter(false);
-
-      selectedIndices = selectedIndices.filter(n => n !== idx);
-    }
-  });
-});
-
-// 초기 카운터 세팅 (복원에서 이미 했지만 안전하게 한 번 더)
-updateCounter(false);
+/* 페이지 진입 시 한 번 생성 */
+buildAliensOnLifePlanet();
 
 /* ============================
-   외계인 스프라이트 애니메이션
+   외계인 스프라이트 2프레임 애니메이션
 ============================ */
 const aliens = document.querySelectorAll('.alien-sprite');
 let alienFrame = 0;
@@ -890,46 +725,18 @@ setInterval(() => {
 }, 250);
 
 /* ============================
-   파티클 효과
-============================ */
-function spawnParticlesAt(target) {
-  const rect = target.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-
-  for (let i = 0; i < 18; i++) {
-    const p = document.createElement("div");
-    p.className = "particle";
-    p.style.left = cx + "px";
-    p.style.top = cy + "px";
-
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 100 + Math.random() * 120;
-
-    p.style.setProperty("--dx", `${Math.cos(angle) * dist}px`);
-    p.style.setProperty("--dy", `${Math.sin(angle) * dist}px`);
-
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 900);
-  }
-}
-
-/* ============================
-   고향별 툴팁
+   고향별 툴팁 + 클릭
 ============================ */
 let hoveredDot = null;
 let tooltipAnimId = null;
 
 function updateTooltipPosition() {
   if (!hoveredDot) return;
-
   const r = hoveredDot.getBoundingClientRect();
   const cx = r.left + r.width / 2;
   const cy = r.top + r.height / 2;
-
   tooltip.style.left = cx + 65 + "px";
   tooltip.style.top = cy + "px";
-
   tooltipAnimId = requestAnimationFrame(updateTooltipPosition);
 }
 
@@ -940,13 +747,10 @@ dots.forEach(dot => {
   dot.addEventListener("mouseenter", () => {
     if (!title) return;
     hoveredDot = dot;
-
     tooltipTitle.textContent = title;
     tooltipDesc.textContent = desc || "";
-
     tooltip.style.opacity = 1;
     tooltip.style.visibility = "visible";
-
     if (tooltipAnimId) cancelAnimationFrame(tooltipAnimId);
     updateTooltipPosition();
   });
@@ -977,8 +781,47 @@ const IDLE_FRAME = 0;
 let currentFrame = IDLE_FRAME;
 let frameProgress = 0;
 let stopTimer = null;
+    let walkerDirection    = 1;
 
-let walkerDirection = 1;
+    /* ============================
+       🌍 고향 행성 각도 저장/복원
+    ============================= */
+    function saveAnglesToStorage() {
+      try {
+        localStorage.setItem('homePlanetAngles', JSON.stringify({
+          planetAngle,
+          orbitAngle,
+          bgAngle
+        }));
+      } catch (e) {
+        // 무시
+      }
+    }
+
+    function restoreAnglesFromStorage() {
+      try {
+        const raw = localStorage.getItem('homePlanetAngles');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+
+        if (typeof data.planetAngle === 'number') planetAngle = data.planetAngle;
+        if (typeof data.orbitAngle  === 'number') orbitAngle  = data.orbitAngle;
+        if (typeof data.bgAngle     === 'number') bgAngle     = data.bgAngle;
+
+        if (planet) {
+          planet.style.setProperty('--planet-angle', `${planetAngle}deg`);
+        }
+        if (orbitLayer) {
+          orbitLayer.style.setProperty('--orbit-angle', `${orbitAngle}deg`);
+        }
+        if (bg) {
+          bg.style.transform = `translate(-50%, -50%) rotate(${bgAngle}deg)`;
+        }
+      } catch (e) {
+        // 무시
+      }
+    }
+
 
 function positionWalker() {
   const rect = planet.getBoundingClientRect();
@@ -997,7 +840,6 @@ function setWalkerFrame(i) {
   walker.style.backgroundPosition = `${-CHAR_FRAME_WIDTH * i}px 0`;
 }
 
-/* wheel 기반 회전 + 걷기 */
 window.addEventListener("wheel", (e) => {
   const delta = e.deltaY;
   if (delta === 0) return;
@@ -1041,80 +883,25 @@ window.addEventListener("wheel", (e) => {
 /* ============================
    좌/우 화살표 클릭 + 호버 텍스트
 ============================ */
-const prevBtn = document.querySelector(".relation-prev-btn");
-const nextBtn = document.querySelector(".relation-next-btn");
-const subTitle = document.querySelector(".title");
 
-const DEFAULT_TEXT = "행성을 탐험하며, 마음에 드는 말들을 클릭해 수집해보세요.";
 
-/* 🔹 자막 텍스트를 부드럽게 바꾸는 함수 */
+const DEFAULT_TEXT = "다른 행성에서 저장한 말들이 이곳에 모입니다.";
+
 let subtitleTimer = null;
 function setSubtitleText(text) {
-  if (!subTitle) return;
-
+  if (!titleEl) return;
   if (subtitleTimer) {
     clearTimeout(subtitleTimer);
     subtitleTimer = null;
   }
-
-  subTitle.style.opacity = 0;
+  titleEl.style.opacity = 0;
   subtitleTimer = setTimeout(() => {
-    subTitle.textContent = text;
-    subTitle.style.opacity = 1;
+    titleEl.textContent = text;
+    titleEl.style.opacity = 1;
   }, 150);
 }
 
-/* ◀ 이전 버튼 */
-prevBtn.addEventListener("mouseenter", () => {
-  setSubtitleText("이전 행성으로 돌아갑니다.");
-});
-prevBtn.addEventListener("mouseleave", () => {
-  setSubtitleText(DEFAULT_TEXT);
-});
 
-/* ▶ 다음 버튼 */
-nextBtn.addEventListener("mouseenter", () => {
-  setSubtitleText("다음 행성으로 진입합니다.");
-});
-nextBtn.addEventListener("mouseleave", () => {
-  setSubtitleText(DEFAULT_TEXT);
-});
-
-/* 클릭 이동 */
-prevBtn.addEventListener("click", () => {
-  window.location.href = 'index.html?skipIntro=true';
-});
-nextBtn.addEventListener("click", () => {
-  window.location.href = 'index3.html';
-});
-
-/* ============================
-   🔐 저장 / 수정 버튼 로직
-============================ */
-
-/* 저장하기: 현재 선택 상태를 “고정” + localStorage에 기록 */
-saveBtn.addEventListener("click", () => {
-  if (isSaved) return;
-  isSaved = true;
-
-  saveBtn.textContent = "저장됨 ✓";
-  saveBtn.classList.add("saved");
-  editBtn.style.display = "inline-block";
-
-  // 🔹 이때만 로컬스토리지에 기록
-  localStorage.setItem("relationPlanetDone", "true");
-  localStorage.setItem("relationPlanetSelections", JSON.stringify(selectedIndices));
-});
-
-
-/* 수정하기: 다시 편집 가능 (잠금 해제, but 저장값은 유지 → 다시 저장해야 갱신됨) */
-editBtn.addEventListener("click", () => {
-  isSaved = false;
-
-  saveBtn.textContent = "저장하기";
-  saveBtn.classList.remove("saved");
-  editBtn.style.display = "none";
-});
 </script>
 
 </body>
