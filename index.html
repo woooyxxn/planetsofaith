@@ -522,13 +522,6 @@
   </style>
 </head>
 <body>
-  <button id="start-audio" style="
-  position:fixed; inset:0; z-index:999999;
-  background:#1f1916; color:#F4E4DC; border:0;
-  font-family:'Gowun Batang', serif; font-size:18px;
-">
-  탭해서 시작하기
-</button>
   <div id="page-transition"></div>
   <!-- 인트로 텍스트 오버레이 -->
   <div class="intro-overlay">
@@ -596,7 +589,6 @@
   </div>
 
   <script>
-
     const planet       = document.querySelector('.planet');
     const bg           = document.querySelector('.bg-layer');
     const walker       = document.querySelector('.walker');
@@ -1168,31 +1160,11 @@ function brownLoadAndGo(url) {
     window.location.href = url;
   }, 500);
 }
-const bgm = new Audio('Star.mp3');
-bgm.loop = true;
-bgm.volume = 0.5;
-
-let started = false;
-async function tryStartBgm() {
-  if (started) return;
-  started = true;
-  try { await bgm.play(); }
-  catch (e) { started = false; }
-}
-
-// “첫 사용자 행동”에 묶기
-window.addEventListener('wheel', tryStartBgm, { once:true, passive:true });
-window.addEventListener('mousedown', tryStartBgm, { once:true });
-window.addEventListener('touchstart', tryStartBgm, { once:true, passive:true });
-window.addEventListener('keydown', tryStartBgm, { once:true });
-
-
 
   </script>
   <div id="loading-screen">
   <div class="loading-circle"></div>
   <div class="loading-text">Loading...</div>
 </div>
-
 </body>
 </html>
